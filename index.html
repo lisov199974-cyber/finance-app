@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Финансы</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 <style>
   :root {
     --bg: #0f0f0f;
@@ -336,9 +336,12 @@
 <script>
 const SUPABASE_URL = 'https://dhjhizvoqfqajlhehysv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_yC4QV0qGv2jrLGksKz--rw_phRdo-Tq';
-const ANTHROPIC_KEY = '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';
+const ANTHROPIC_KEY = 'ВСТАВЬ_СВОЙ_ANTHROPIC_KEY';
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+  global: { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+});
 
 // Telegram theme
 const tg = window.Telegram?.WebApp;
