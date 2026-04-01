@@ -501,23 +501,12 @@ async function handlePhoto(input) {
   reader.onload = async e => {
     const base64 = e.target.result.split(',')[1];
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-              { type: 'text', text: `Посмотри на этот скриншот истории банковских операций. Найди все операции где деньги СПИСАЛИСЬ. Каждая операция: название магазина крупным шрифтом, категория мелким серым шрифтом под ним, сумма справа со знаком минус. Бери КАТЕГОРИЮ (мелкий серый текст), а не название магазина. Один магазин дважды = две отдельные записи. Пропускай только суммы со знаком плюс и переводы между счетами. Верни ТОЛЬКО JSON без пояснений: [{"category":"аптеки","amount":119},{"category":"продукты","amount":850}]` }
-            ]
-          }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mediaType: file.type })
       });
-      const data = await res.json();
-      let text = data.content?.[0]?.text || '[]';
+      let text = await res.text();
       text = text.replace(/```json|```/g, '').trim();
       photoExpenses = JSON.parse(text);
 
