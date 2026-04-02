@@ -365,27 +365,18 @@
 <div class="toast" id="toast"></div>
 
 <!-- MODAL: СПИСОК ПОКУПОК -->
-<div class="modal-overlay" id="modal-shopping" onclick="if(event.target===this)closeModal('shopping')">
-  <div class="modal" style="max-height:90dvh;">
-    <button class="modal-close" onclick="closeModal('shopping')">×</button>
-    <div class="modal-title">Список покупок</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <input class="form-input" id="shop-name" placeholder="Название" style="flex:2">
-      <input class="form-input" id="shop-qty" placeholder="кол-во" style="flex:1">
+<div class="modal-overlay" id="modal-shopping" onclick="if(event.target===this)closeModal('shopping')" style="align-items:flex-end;">
+  <div class="modal" style="max-height:75dvh;display:flex;flex-direction:column;border-radius:var(--radius) var(--radius) 0 0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:600;">Список покупок</div>
+      <button class="modal-close" onclick="closeModal('shopping')" style="float:none;">×</button>
     </div>
-    <div style="margin-bottom:14px;">
-      <div class="chips" id="shop-cat-chips">
-        <div class="chip" onclick="selectShopCat(this,'продукты')">🛒 продукты</div>
-        <div class="chip" onclick="selectShopCat(this,'аптека')">💊 аптека</div>
-        <div class="chip" onclick="selectShopCat(this,'бытовая химия')">🧴 химия</div>
-        <div class="chip" onclick="selectShopCat(this,'одежда')">👗 одежда</div>
-        <div class="chip" onclick="selectShopCat(this,'другое')">📦 другое</div>
-      </div>
-      <input type="hidden" id="shop-cat" value="продукты">
+    <div id="shop-list" style="flex:1;overflow-y:auto;min-height:0;"></div>
+    <div style="flex-shrink:0;padding-top:10px;border-top:0.5px solid var(--border);margin-top:8px;">
+      <input class="form-input" id="shop-name" placeholder="Добавить позицию..." style="margin-bottom:8px;"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();addShopItem();}">
+      <button class="btn btn-secondary" onclick="clearDoneItems()" style="font-size:13px;padding:10px;">Очистить отмеченные</button>
     </div>
-    <button class="btn btn-primary" onclick="addShopItem()" style="margin-bottom:14px;">+ Добавить</button>
-    <div id="shop-list"></div>
-    <button class="btn btn-secondary" onclick="clearDoneItems()" style="margin-top:8px;font-size:13px;">Очистить отмеченные</button>
   </div>
 </div>
 
@@ -1115,58 +1106,41 @@ async function updateSavings(name, type) {
 }
 
 // ── СПИСОК ПОКУПОК ─────────────────────────────────────
-let selectedShopCat = 'продукты';
-
-function selectShopCat(el, cat) {
-  selectedShopCat = cat;
-  document.getElementById('shop-cat').value = cat;
-  document.querySelectorAll('#shop-cat-chips .chip').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
 async function openShoppingList() {
   openModal('shopping');
   await loadShopList();
-  // Выбираем первый чип по умолчанию
-  const firstChip = document.querySelector('#shop-cat-chips .chip');
-  if (firstChip) selectShopCat(firstChip, 'продукты');
+  setTimeout(() => document.getElementById('shop-name')?.focus(), 300);
 }
 
 async function loadShopList() {
-  const { data } = await sb.from('shopping_list').select('*').order('done').order('created_at', { ascending: false });
+  const { data } = await sb.from('shopping_list').select('*').order('done').order('created_at');
   const items = data || [];
 
   if (!items.length) {
     document.getElementById('shop-list').innerHTML =
-      '<div class="empty" style="padding:20px 0;"><div class="empty-text">Список пуст</div></div>';
+      '<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:14px;">Список пуст</div>';
     return;
   }
 
   document.getElementById('shop-list').innerHTML = items.map(item => `
-    <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:0.5px solid var(--border);">
       <div onclick="toggleShopItem('${item.id}', ${item.done})"
-        style="width:22px;height:22px;border-radius:50%;border:1.5px solid ${item.done ? 'var(--green)' : 'var(--border)'};
-        background:${item.done ? 'var(--green)' : 'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-        ${item.done ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+        style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${item.done ? 'var(--green)' : 'var(--text3)'};
+        background:${item.done ? 'var(--green)' : 'transparent'};cursor:pointer;flex-shrink:0;
+        display:flex;align-items:center;justify-content:center;transition:all .15s;">
+        ${item.done ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
       </div>
-      <div style="flex:1;${item.done ? 'opacity:0.4;text-decoration:line-through;' : ''}">
-        <div style="font-size:14px;font-weight:500;">${item.name}</div>
-        <div style="font-size:12px;color:var(--text2);">${item.category || ''}${item.quantity ? ' · ' + item.quantity : ''}</div>
-      </div>
-      <button onclick="deleteShopItem('${item.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;">×</button>
+      <div style="flex:1;font-size:16px;${item.done ? 'opacity:0.35;text-decoration:line-through;' : ''}">${item.name}</div>
     </div>`).join('');
 }
 
 async function addShopItem() {
   const name = document.getElementById('shop-name').value.trim();
-  if (!name) { toast('Введи название', 'error'); return; }
-  const qty = document.getElementById('shop-qty').value.trim();
-  const cat = document.getElementById('shop-cat').value || 'продукты';
-
-  await sb.from('shopping_list').insert({ name, category: cat, quantity: qty });
+  if (!name) return;
+  await sb.from('shopping_list').insert({ name });
   document.getElementById('shop-name').value = '';
-  document.getElementById('shop-qty').value = '';
   await loadShopList();
+  document.getElementById('shop-name').focus();
 }
 
 async function toggleShopItem(id, done) {
