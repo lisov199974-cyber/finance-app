@@ -322,13 +322,25 @@
     <button class="modal-close" onclick="closeModal('budget')">×</button>
     <div class="modal-title">Настройка бюджета</div>
     <div class="form-group">
-      <label class="form-label">Доход в месяц (₽)</label>
-      <input class="form-input" id="budget-income" type="number" inputmode="decimal" placeholder="150000">
+      <label class="form-label">Получено (аванс или зарплата, ₽)</label>
+      <input class="form-input" id="budget-income" type="number" inputmode="decimal" placeholder="70000">
     </div>
     <div class="form-group">
-      <label class="form-label">План по категориям</label>
+      <label class="form-label">План трат по категориям</label>
       <textarea class="form-input" id="budget-plan" rows="6" placeholder="продукты 15000&#10;такси 5000&#10;рестораны 10000&#10;аптеки 3000" style="resize:none;font-family:inherit;line-height:1.6"></textarea>
       <div class="form-hint">Каждая категория с новой строки: название сумма</div>
+    </div>
+    <div id="budget-remainder-block" style="display:none;margin-bottom:14px;">
+      <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Остаток для копилки</div>
+        <div id="budget-remainder-val" style="font-size:22px;font-weight:600;color:var(--green)"></div>
+      </div>
+    </div>
+    <div id="budget-savings-block" style="display:none;margin-bottom:14px;">
+      <label class="form-label">Зачислить остаток на счёт</label>
+      <select class="form-input" id="budget-savings-account">
+        <option value="">— Не зачислять —</option>
+      </select>
     </div>
     <button class="btn btn-primary" onclick="saveBudget()">Сохранить</button>
   </div>
@@ -511,17 +523,60 @@ function selectCat(name) {
   document.querySelectorAll('.chip').forEach(c => c.classList.toggle('selected', c.textContent === name));
 }
 
+let pendingExpense = null;
+
 async function saveExpense() {
   const amount = parseFloat(document.getElementById('add-amount').value);
   const category = document.getElementById('add-cat').value.trim().toLowerCase();
   if (!amount || !category) { toast('Заполни сумму и категорию', 'error'); return; }
 
+  // Проверяем — новая ли категория
+  const { data: cats } = await sb.from('categories').select('name');
+  const existing = (cats||[]).map(c => c.name.toLowerCase());
+  const isNew = !existing.includes(category);
+
+  if (isNew && existing.length > 0) {
+    // Показываем предупреждение
+    pendingExpense = { amount, category };
+    const similar = existing.filter(c =>
+      c.includes(category.slice(0,3)) || category.includes(c.slice(0,3))
+    ).slice(0, 5);
+    const similarHtml = similar.length ?
+      `<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Похожие категории:<br>${similar.map(c =>
+        `<span onclick="useSimilarCat('${c}')" style="display:inline-block;margin:4px 4px 0 0;padding:5px 10px;background:var(--bg3);border-radius:20px;cursor:pointer;font-size:13px">${c}</span>`
+      ).join('')}</div>` : '';
+    document.getElementById('modal-savings-title').textContent = 'Новая категория';
+    document.getElementById('modal-savings-body').innerHTML = `
+      <div style="margin-bottom:12px;font-size:14px;">Категория <b>${category}</b> не существует. Это новая категория?</div>
+      ${similarHtml}
+      <button class="btn btn-primary" onclick="confirmNewCategory()" style="margin-bottom:8px">Да, создать «${category}»</button>
+      <button class="btn btn-secondary" onclick="closeModal('savings');pendingExpense=null;">Отмена</button>`;
+    openModal('savings');
+    return;
+  }
+
+  await doSaveExpense(amount, category);
+}
+
+function useSimilarCat(cat) {
+  closeModal('savings');
+  pendingExpense = null;
+  document.getElementById('add-cat').value = cat;
+  selectCat(cat);
+}
+
+async function confirmNewCategory() {
+  closeModal('savings');
+  if (!pendingExpense) return;
+  await doSaveExpense(pendingExpense.amount, pendingExpense.category);
+  pendingExpense = null;
+}
+
+async function doSaveExpense(amount, category) {
   const { error } = await sb.from('expenses').insert({ amount, category, date: new Date().toISOString() });
   if (error) { toast('Ошибка сохранения', 'error'); return; }
 
   await sb.from('categories').upsert({ name: category }, { onConflict: 'name' });
-
-  // Проверка лимита
   await checkLimit(category);
 
   document.getElementById('add-amount').value = '';
@@ -751,32 +806,77 @@ async function loadBudget() {
     </button>`;
 }
 
-function openBudgetModal(income, items) {
+async function openBudgetModal(income, items) {
   document.getElementById('budget-income').value = income || '';
   document.getElementById('budget-plan').value = items.map(b => `${b.key} ${Math.round(b.value)}`).join('\n');
+  document.getElementById('budget-remainder-block').style.display = 'none';
+  document.getElementById('budget-savings-block').style.display = 'none';
+
+  // Загружаем счета копилки
+  const { data: accounts } = await sb.from('accounts').select('name');
+  const sel = document.getElementById('budget-savings-account');
+  sel.innerHTML = '<option value="">— Не зачислять —</option>' +
+    (accounts||[]).map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+
   openModal('budget');
+
+  // Обновляем остаток при изменении полей
+  const updateRemainder = () => {
+    const inc = parseFloat(document.getElementById('budget-income').value) || 0;
+    const lines = document.getElementById('budget-plan').value.trim().split('\n');
+    let total = 0;
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 2) continue;
+      const amt = parseFloat(parts[parts.length-1]);
+      if (amt > 0) total += amt;
+    }
+    const rem = inc - total;
+    if (inc > 0) {
+      document.getElementById('budget-remainder-val').textContent = money(rem);
+      document.getElementById('budget-remainder-val').style.color = rem >= 0 ? 'var(--green)' : 'var(--red)';
+      document.getElementById('budget-remainder-block').style.display = 'block';
+      document.getElementById('budget-savings-block').style.display = rem > 0 ? 'block' : 'none';
+    }
+  };
+  document.getElementById('budget-income').oninput = updateRemainder;
+  document.getElementById('budget-plan').oninput = updateRemainder;
+  if (income) updateRemainder();
 }
 
 async function saveBudget() {
   const income = parseFloat(document.getElementById('budget-income').value);
   const lines = document.getElementById('budget-plan').value.trim().split('\n');
-  if (!income) { toast('Введи доход', 'error'); return; }
+  if (!income) { toast('Введи сумму', 'error'); return; }
 
   const rows = [{ key: '__income__', value: income }];
+  let totalPlan = 0;
   for (const line of lines) {
     const parts = line.trim().split(/\s+/);
     if (parts.length < 2) continue;
     const amount = parseFloat(parts[parts.length - 1]);
     const cat = parts.slice(0, -1).join(' ').toLowerCase();
-    if (cat && amount) rows.push({ key: cat, value: amount });
+    if (cat && amount) { rows.push({ key: cat, value: amount }); totalPlan += amount; }
   }
 
   await sb.from('budget').delete().neq('key', '___');
   const { error } = await sb.from('budget').insert(rows);
   if (error) { toast('Ошибка сохранения', 'error'); return; }
 
+  // Зачисляем остаток в копилку если выбрана
+  const remainder = income - totalPlan;
+  const savingsAccount = document.getElementById('budget-savings-account').value;
+  if (savingsAccount && remainder > 0) {
+    const { data: acc } = await sb.from('accounts').select('balance').eq('name', savingsAccount).single();
+    if (acc) {
+      await sb.from('accounts').update({ balance: acc.balance + remainder }).eq('name', savingsAccount);
+      toast(`Бюджет сохранён, ${money(remainder)} → ${savingsAccount} ✓`);
+    }
+  } else {
+    toast('Бюджет сохранён ✓');
+  }
+
   closeModal('budget');
-  toast('Бюджет сохранён ✓');
   loadBudget();
 }
 
@@ -872,8 +972,15 @@ async function createSavings() {
 
 function savingsAction(type, name) {
   document.getElementById('modal-savings-title').textContent = type === 'add' ? `Пополнить «${name}»` : `Снять с «${name}»`;
+  const extraField = type === 'remove' ? `
+    <div class="form-group">
+      <label class="form-label">На что (категория расхода)</label>
+      <input class="form-input" id="sav-purpose" type="text" placeholder="ремонт, медицина...">
+      <div class="form-hint">Трата сразу добавится в расходы</div>
+    </div>` : '';
   document.getElementById('modal-savings-body').innerHTML = `
     <div class="form-group"><label class="form-label">Сумма (₽)</label><input class="form-input" id="sav-amount" type="number" inputmode="decimal" placeholder="0"></div>
+    ${extraField}
     <button class="btn btn-primary" onclick="updateSavings('${name}', '${type}')">Подтвердить</button>`;
   openModal('savings');
 }
@@ -881,12 +988,24 @@ function savingsAction(type, name) {
 async function updateSavings(name, type) {
   const amount = parseFloat(document.getElementById('sav-amount').value);
   if (!amount) { toast('Введи сумму', 'error'); return; }
+
   const { data } = await sb.from('accounts').select('balance').eq('name', name).single();
   const newBal = type === 'add' ? data.balance + amount : data.balance - amount;
   await sb.from('accounts').update({ balance: newBal }).eq('name', name);
+
+  // При снятии — вносим как расход
+  if (type === 'remove') {
+    const purpose = document.getElementById('sav-purpose')?.value.trim().toLowerCase() || 'из копилки';
+    await sb.from('expenses').insert({ amount, category: purpose, date: new Date().toISOString() });
+    await sb.from('categories').upsert({ name: purpose }, { onConflict: 'name' });
+    toast(`-${money(amount)} снято и добавлено в расходы (${purpose}) ✓`);
+  } else {
+    toast(`+${money(amount)} добавлено ✓`);
+  }
+
   closeModal('savings');
-  toast(type === 'add' ? `+${money(amount)} добавлено ✓` : `-${money(amount)} снято ✓`);
   loadSavings();
+  if (type === 'remove') loadHome();
 }
 
 // ── INIT ───────────────────────────────────────────────
