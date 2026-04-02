@@ -169,9 +169,15 @@
   <div class="screens">
     <!-- HOME -->
     <div class="screen active" id="s-home">
-      <div class="header">
-        <h1 id="home-month">Загрузка...</h1>
-        <p>Семейный бюджет</p>
+      <div class="header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <h1 id="home-month">Загрузка...</h1>
+          <p>Семейный бюджет</p>
+        </div>
+        <button onclick="undoLastExpense()" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:4px 0;margin-top:4px;display:flex;align-items:center;gap:4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 6 6.7L3 7"/></svg>
+          Отмена
+        </button>
       </div>
       <div class="pad" id="home-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
@@ -202,7 +208,7 @@
             <label class="form-label">Комментарий (необязательно)</label>
             <input class="form-input" id="add-note" type="text" placeholder="Магнит на Ленина">
           </div>
-          <button class="btn btn-primary" onclick="saveExpense()">Сохранить</button>
+          <button class="btn btn-primary" id="save-expense-btn" onclick="saveExpense()">Сохранить</button>
         </div>
 
         <!-- PHOTO -->
@@ -450,6 +456,34 @@ function switchTab(tab) {
 function openModal(id) { document.getElementById('modal-' + id).classList.add('open'); }
 function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
 
+// ── ОТМЕНА ПОСЛЕДНЕГО ДЕЙСТВИЯ ────────────────────────
+async function undoLastExpense() {
+  const { data } = await sb.from('expenses').select('*').order('date', { ascending: false }).limit(1);
+  if (!data || !data.length) { toast('Нечего отменять', 'error'); return; }
+
+  const last = data[0];
+  const date = new Date(last.date).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+  // Показываем модал с подтверждением
+  document.getElementById('modal-savings-title').textContent = 'Отменить последнюю трату?';
+  document.getElementById('modal-savings-body').innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:600;margin-bottom:4px;">${last.category}</div>
+      <div style="font-size:22px;font-weight:700;color:var(--red);margin-bottom:4px;">-${money(last.amount)}</div>
+      <div style="font-size:12px;color:var(--text2);">${date}</div>
+    </div>
+    <button class="btn btn-primary" style="background:var(--red);margin-bottom:8px;" onclick="confirmUndo('${last.id}')">Удалить эту трату</button>
+    <button class="btn btn-secondary" onclick="closeModal('savings')">Отмена</button>`;
+  openModal('savings');
+}
+
+async function confirmUndo(id) {
+  await sb.from('expenses').delete().eq('id', id);
+  closeModal('savings');
+  toast('Трата удалена ✓');
+  loadHome();
+}
+
 // ── HOME ───────────────────────────────────────────────
 async function loadHome() {
   const now = new Date();
@@ -576,8 +610,16 @@ async function confirmNewCategory() {
 }
 
 async function doSaveExpense(amount, category) {
+  const btn = document.getElementById('save-expense-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Сохранение...'; btn.style.opacity = '0.5'; }
+
   const { error } = await sb.from('expenses').insert({ amount, category, date: new Date().toISOString() });
-  if (error) { toast('Ошибка сохранения', 'error'); return; }
+
+  if (error) {
+    toast('Ошибка сохранения', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; btn.style.opacity = '1'; }
+    return;
+  }
 
   await sb.from('categories').upsert({ name: category }, { onConflict: 'name' });
   await checkLimit(category);
@@ -585,6 +627,7 @@ async function doSaveExpense(amount, category) {
   document.getElementById('add-amount').value = '';
   document.getElementById('add-cat').value = '';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; btn.style.opacity = '1'; }
   toast('Сохранено ✓');
   go('home');
 }
