@@ -207,18 +207,21 @@
 
         <!-- PHOTO -->
         <div id="tab-photo" style="display:none">
-          <div class="upload-area" onclick="document.getElementById('file-input').click()">
+          <div id="upload-area" class="upload-area" onclick="document.getElementById('file-input').click()">
             <div class="upload-icon">📷</div>
             <div class="upload-text">Нажми чтобы загрузить скриншот</div>
             <div class="upload-hint">Claude распознает все списания автоматически</div>
           </div>
           <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+          <div id="photo-preview-img" style="display:none;margin-bottom:12px;">
+            <img id="screenshot-img" style="width:100%;border-radius:var(--radius);border:0.5px solid var(--border);">
+          </div>
           <div id="photo-result" style="display:none">
             <div class="preview-box">
               <div class="preview-header">Найденные траты — можно редактировать</div>
               <div id="preview-items"></div>
             </div>
-            <button class="btn btn-primary" onclick="savePhotoExpenses()">Сохранить все</button>
+            <button class="btn btn-primary" id="save-photo-btn" onclick="savePhotoExpenses()">Сохранить все</button>
             <button class="btn btn-secondary" onclick="cancelPhoto()">Отмена</button>
           </div>
           <div id="photo-loading" style="display:none">
@@ -355,6 +358,56 @@ if (tg) {
 const money = n => Math.round(n).toLocaleString('ru-RU') + ' ₽';
 const monthStart = () => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); };
 const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+// ── ПЕРИОД ЗАРПЛАТА/АВАНС ─────────────────────────────
+// Зарплата 12-го, аванс 27-го. Если выходной — сдвигаем раньше.
+function getPayday(year, month, day) {
+  let d = new Date(year, month, day);
+  const dow = d.getDay(); // 0=вс, 6=сб
+  if (dow === 0) d.setDate(day - 2); // вс → пт
+  else if (dow === 6) d.setDate(day - 1); // сб → пт
+  return d;
+}
+
+function periodStart() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+
+  const salary = getPayday(y, m, 12);   // зарплата 12-го
+  const advance = getPayday(y, m, 27);  // аванс 27-го
+
+  let start;
+  if (d >= advance.getDate()) {
+    // После аванса — период с аванса по ~12 следующего
+    start = new Date(y, m, advance.getDate());
+  } else if (d >= salary.getDate()) {
+    // После зарплаты — период с зарплаты по ~27
+    start = new Date(y, m, salary.getDate());
+  } else {
+    // До зарплаты — период с аванса прошлого месяца
+    const prevAdvance = getPayday(y, m - 1, 27);
+    start = new Date(y, m - 1, prevAdvance.getDate());
+  }
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString();
+}
+
+function periodLabel() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const salary = getPayday(y, m, 12);
+  const advance = getPayday(y, m, 27);
+
+  if (d >= advance.getDate()) {
+    const nextSalary = getPayday(y, m + 1, 12);
+    return `${advance.getDate()} ${months[m].slice(0,3)} — ${nextSalary.getDate()} ${months[m+1 > 11 ? 0 : m+1].slice(0,3)}`;
+  } else if (d >= salary.getDate()) {
+    return `${salary.getDate()} ${months[m].slice(0,3)} — ${advance.getDate()} ${months[m].slice(0,3)}`;
+  } else {
+    const prevAdvance = getPayday(y, m - 1, 27);
+    return `${prevAdvance.getDate()} ${months[m-1 < 0 ? 11 : m-1].slice(0,3)} — ${salary.getDate()} ${months[m].slice(0,3)}`;
+  }
+}
 const catEmoji = c => ({ продукты:'🛒', еда:'🍔', такси:'🚖', транспорт:'🚌', аптеки:'💊', здоровье:'💊', красота:'💄', кафе:'☕', рестораны:'🍽', одежда:'👗', развлечения:'🎮', связь:'📱', коммунальные:'🏠' }[c?.toLowerCase()] || '💳');
 const barColor = pct => pct >= 100 ? '#ef4444' : pct >= 85 ? '#f59e0b' : '#22c55e';
 
@@ -388,10 +441,10 @@ function closeModal(id) { document.getElementById('modal-' + id).classList.remov
 // ── HOME ───────────────────────────────────────────────
 async function loadHome() {
   const now = new Date();
-  document.getElementById('home-month').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
+  document.getElementById('home-month').textContent = periodLabel();
 
   const [{ data: expenses }, { data: budget }] = await Promise.all([
-    sb.from('expenses').select('*').gte('date', monthStart()),
+    sb.from('expenses').select('*').gte('date', periodStart()),
     sb.from('budget').select('*')
   ]);
 
@@ -413,7 +466,7 @@ async function loadHome() {
       <div class="metric">
         <div class="metric-label">Осталось</div>
         <div class="metric-value" style="color:var(--green)">${money(Math.max(0, income - totalSpent))}</div>
-        <div class="metric-sub">${income ? 'до конца месяца' : 'бюджет не задан'}</div>
+        <div class="metric-sub">${income ? 'остаток периода' : 'бюджет не задан'}</div>
       </div>
     </div>
 
@@ -481,7 +534,7 @@ async function saveExpense() {
 async function checkLimit(category) {
   const { data: lim } = await sb.from('limits').select('amount').eq('category', category).single();
   if (!lim) return;
-  const { data: fact } = await sb.from('expenses').select('amount').eq('category', category).gte('date', monthStart());
+  const { data: fact } = await sb.from('expenses').select('amount').eq('category', category).gte('date', periodStart());
   const spent = (fact||[]).reduce((s,e) => s + e.amount, 0);
   if (spent > lim.amount) {
     toast(`⚠️ Лимит «${category}» превышен на ${money(spent - lim.amount)}`, 'error');
@@ -495,11 +548,17 @@ async function handlePhoto(input) {
   if (!input.files[0]) return;
   document.getElementById('photo-result').style.display = 'none';
   document.getElementById('photo-loading').style.display = 'flex';
+  document.getElementById('upload-area').style.display = 'none';
 
   const file = input.files[0];
   const reader = new FileReader();
   reader.onload = async e => {
     const base64 = e.target.result.split(',')[1];
+
+    // Показываем превью скриншота
+    document.getElementById('screenshot-img').src = e.target.result;
+    document.getElementById('photo-preview-img').style.display = 'block';
+
     try {
       const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', {
         method: 'POST',
@@ -529,6 +588,8 @@ async function handlePhoto(input) {
       document.getElementById('photo-result').style.display = 'block';
     } catch(err) {
       document.getElementById('photo-loading').style.display = 'none';
+      document.getElementById('upload-area').style.display = 'block';
+      document.getElementById('photo-preview-img').style.display = 'none';
       toast('Ошибка распознавания. Попробуй ещё раз.', 'error');
     }
   };
@@ -538,12 +599,25 @@ async function handlePhoto(input) {
 async function savePhotoExpenses() {
   if (!photoExpenses.length) return;
 
+  // Блокируем кнопку чтобы не дать нажать дважды
+  const btn = document.getElementById('save-photo-btn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = 'Сохранение...';
+  btn.style.opacity = '0.5';
+
   const rows = photoExpenses.filter(e => e.amount > 0).map(e => ({
     amount: e.amount, category: e.category.toLowerCase(), date: new Date().toISOString()
   }));
 
   const { error } = await sb.from('expenses').insert(rows);
-  if (error) { toast('Ошибка сохранения', 'error'); return; }
+  if (error) {
+    toast('Ошибка сохранения', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Сохранить все';
+    btn.style.opacity = '1';
+    return;
+  }
 
   // Сохраняем категории и мерчанты
   for (const e of photoExpenses) {
@@ -561,7 +635,11 @@ async function savePhotoExpenses() {
 function cancelPhoto() {
   photoExpenses = [];
   document.getElementById('photo-result').style.display = 'none';
+  document.getElementById('photo-preview-img').style.display = 'none';
+  document.getElementById('upload-area').style.display = 'block';
   document.getElementById('file-input').value = '';
+  const btn = document.getElementById('save-photo-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Сохранить все'; btn.style.opacity = '1'; }
 }
 
 // ── STATS ──────────────────────────────────────────────
@@ -628,11 +706,11 @@ async function loadStats() {
 // ── BUDGET ─────────────────────────────────────────────
 async function loadBudget() {
   const now = new Date();
-  document.getElementById('budget-period').textContent = months[now.getMonth()];
+  document.getElementById('budget-period').textContent = periodLabel();
 
   const [{ data: budget }, { data: expenses }] = await Promise.all([
     sb.from('budget').select('*'),
-    sb.from('expenses').select('*').gte('date', monthStart())
+    sb.from('expenses').select('*').gte('date', periodStart())
   ]);
 
   const income = (budget||[]).find(b => b.key === '__income__')?.value || 0;
@@ -706,7 +784,7 @@ async function saveBudget() {
 async function loadLimits() {
   const [{ data: limits }, { data: expenses }] = await Promise.all([
     sb.from('limits').select('*'),
-    sb.from('expenses').select('*').gte('date', monthStart())
+    sb.from('expenses').select('*').gte('date', periodStart())
   ]);
 
   const factByCat = {};
