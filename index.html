@@ -460,25 +460,28 @@ async function loadHome() {
     sb.from('budget').select('*')
   ]);
 
-  const totalSpent = (expenses||[]).reduce((s,e) => s + e.amount, 0);
-  const income = (budget||[]).find(b => b.key === '__income__')?.value || 0;
-  const recent = [...(expenses||[])].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
-
   const budgetItems = (budget||[]).filter(b => b.key !== '__income__');
+  const totalPlanBudget = budgetItems.reduce((s,b) => s + b.value, 0);
+  // Скрываем траты из копилки помеченные как hidden
+  const visibleExpenses = (expenses||[]).filter(e => !e.hidden);
+  const totalSpent = visibleExpenses.reduce((s,e) => s + e.amount, 0);
+  const recent = [...visibleExpenses].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
   const factByCat = {};
-  (expenses||[]).forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
+  visibleExpenses.forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
+  // Остаток = план минус потрачено (не доход!)
+  const budgetRemainder = totalPlanBudget - totalSpent;
 
   document.getElementById('home-content').innerHTML = `
     <div class="card-grid">
       <div class="metric">
         <div class="metric-label">Потрачено</div>
         <div class="metric-value" style="color:var(--red)">${money(totalSpent)}</div>
-        ${income ? `<div class="metric-sub">из ${money(income)}</div>` : ''}
+        ${totalPlanBudget ? `<div class="metric-sub">из ${money(totalPlanBudget)} по плану</div>` : ''}
       </div>
       <div class="metric">
         <div class="metric-label">Осталось</div>
-        <div class="metric-value" style="color:var(--green)">${money(Math.max(0, income - totalSpent))}</div>
-        <div class="metric-sub">${income ? 'остаток периода' : 'бюджет не задан'}</div>
+        <div class="metric-value" style="color:${budgetRemainder>=0?'var(--green)':'var(--red)'}">${money(Math.abs(budgetRemainder))}</div>
+        <div class="metric-sub">${totalPlanBudget ? (budgetRemainder>=0?'по плану':'перерасход!') : 'бюджет не задан'}</div>
       </div>
     </div>
 
@@ -976,7 +979,11 @@ function savingsAction(type, name) {
     <div class="form-group">
       <label class="form-label">На что (категория расхода)</label>
       <input class="form-input" id="sav-purpose" type="text" placeholder="ремонт, медицина...">
-      <div class="form-hint">Трата сразу добавится в расходы</div>
+      <div class="form-hint">Трата добавится в расходы и бюджет текущего периода</div>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 0;">
+      <input type="checkbox" id="sav-hidden" style="width:18px;height:18px;cursor:pointer;">
+      <label for="sav-hidden" style="font-size:14px;color:var(--text2);cursor:pointer;">Скрыть из статистики и главной</label>
     </div>` : '';
   document.getElementById('modal-savings-body').innerHTML = `
     <div class="form-group"><label class="form-label">Сумма (₽)</label><input class="form-input" id="sav-amount" type="number" inputmode="decimal" placeholder="0"></div>
@@ -993,19 +1000,33 @@ async function updateSavings(name, type) {
   const newBal = type === 'add' ? data.balance + amount : data.balance - amount;
   await sb.from('accounts').update({ balance: newBal }).eq('name', name);
 
-  // При снятии — вносим как расход
   if (type === 'remove') {
     const purpose = document.getElementById('sav-purpose')?.value.trim().toLowerCase() || 'из копилки';
-    await sb.from('expenses').insert({ amount, category: purpose, date: new Date().toISOString() });
+    const isHidden = document.getElementById('sav-hidden')?.checked || false;
+
+    // Вносим как расход (с флагом hidden если нужно)
+    await sb.from('expenses').insert({ amount, category: purpose, date: new Date().toISOString(), hidden: isHidden });
     await sb.from('categories').upsert({ name: purpose }, { onConflict: 'name' });
-    toast(`-${money(amount)} снято и добавлено в расходы (${purpose}) ✓`);
+
+    // Если не скрыто — добавляем в бюджет как новую строку плана
+    if (!isHidden) {
+      const { data: existingBudget } = await sb.from('budget').select('key, value').eq('key', purpose).single();
+      if (!existingBudget) {
+        await sb.from('budget').insert({ key: purpose, value: amount });
+      } else {
+        await sb.from('budget').update({ value: existingBudget.value + amount }).eq('key', purpose);
+      }
+    }
+
+    const hiddenNote = isHidden ? ' (скрыто из статистики)' : '';
+    toast(`-${money(amount)} снято → ${purpose}${hiddenNote} ✓`);
   } else {
     toast(`+${money(amount)} добавлено ✓`);
   }
 
   closeModal('savings');
   loadSavings();
-  if (type === 'remove') loadHome();
+  if (type === 'remove') { loadHome(); loadBudget(); }
 }
 
 // ── INIT ───────────────────────────────────────────────
