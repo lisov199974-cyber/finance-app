@@ -253,9 +253,9 @@
       </div>
     </div>
 
-    <!-- LIMITS -->
+    <!-- RATES -->
     <div class="screen" id="s-limits">
-      <div class="header"><h1>Лимиты</h1></div>
+      <div class="header"><h1>Курс валют</h1><p id="rates-updated"></p></div>
       <div class="pad" id="limits-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
       </div>
@@ -288,8 +288,8 @@
       Бюджет
     </button>
     <button class="nav-btn" id="nav-limits" onclick="go('limits')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Лимиты
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Курс
     </button>
     <button class="nav-btn" id="nav-savings" onclick="go('savings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 6v6l4 2"/></svg>
@@ -936,57 +936,57 @@ async function saveBudget() {
   loadBudget();
 }
 
-// ── LIMITS ─────────────────────────────────────────────
+// ── КУРС ВАЛЮТ ─────────────────────────────────────────
+const RATES_API = 'https://www.cbr-xml-daily.ru/daily_json.js';
+
 async function loadLimits() {
-  const [{ data: limits }, { data: expenses }] = await Promise.all([
-    sb.from('limits').select('*'),
-    sb.from('expenses').select('*').gte('date', periodStart())
-  ]);
+  document.getElementById('limits-content').innerHTML =
+    '<div class="loader"><div class="spin"></div>Загружаю курсы...</div>';
 
-  const factByCat = {};
-  (expenses||[]).forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
+  try {
+    const res = await fetch(RATES_API);
+    const data = await res.json();
 
-  document.getElementById('limits-content').innerHTML = `
-    ${limits?.length ? `<div class="card">
-      ${limits.map(l => {
-        const spent = factByCat[l.category]||0;
-        const pct = Math.round(spent/l.amount*100);
-        const cls = pct >= 100 ? 'badge-over' : pct >= 85 ? 'badge-warn' : 'badge-ok';
-        const label = pct >= 100 ? `+${money(spent-l.amount)} превышен` : `${pct}% — ок`;
-        return `<div class="limit-item">
-          <div>
-            <div class="limit-name">${catEmoji(l.category)} ${l.category}</div>
-            <div class="limit-spent">${money(spent)} из ${money(l.amount)}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="badge ${cls}">${label}</span>
-            <button class="btn-sm" onclick="deleteLimit('${l.category}')">✕</button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>` : '<div class="empty"><div class="empty-icon">🚦</div><div class="empty-text">Лимитов пока нет</div></div>'}
-    <button class="btn btn-primary" onclick="openModal('limit')" style="margin-top:8px">+ Добавить лимит</button>`;
-}
+    const currencies = [
+      { code: 'USD', name: 'Доллар США', flag: '🇺🇸' },
+      { code: 'EUR', name: 'Евро', flag: '🇪🇺' },
+      { code: 'TRY', name: 'Турецкая лира', flag: '🇹🇷' },
+      { code: 'GBP', name: 'Фунт стерлингов', flag: '🇬🇧' },
+      { code: 'CNY', name: 'Китайский юань', flag: '🇨🇳' },
+      { code: 'AED', name: 'Дирхам ОАЭ', flag: '🇦🇪' },
+    ];
 
-async function saveLimit() {
-  const category = document.getElementById('limit-cat').value.trim().toLowerCase();
-  const amount = parseFloat(document.getElementById('limit-amount').value);
-  if (!category || !amount) { toast('Заполни все поля', 'error'); return; }
+    const updated = new Date(data.Date).toLocaleString('ru-RU', {
+      day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+    });
+    document.getElementById('rates-updated').textContent = 'ЦБ РФ · ' + updated;
 
-  const { error } = await sb.from('limits').upsert({ category, amount }, { onConflict: 'category' });
-  if (error) { toast('Ошибка', 'error'); return; }
+    document.getElementById('limits-content').innerHTML =
+      '<div class="card">' +
+      currencies.map(cur => {
+        const val = data.Valute[cur.code];
+        if (!val) return '';
+        const rate = (val.Value / val.Nominal).toFixed(2);
+        const prev = (val.Previous / val.Nominal).toFixed(2);
+        const diff = (val.Value / val.Nominal - val.Previous / val.Nominal).toFixed(2);
+        const isUp = diff > 0;
+        const diffColor = isUp ? 'var(--red)' : 'var(--green)';
+        const diffSign = isUp ? '+' : '';
+        return '<div class="expense-item">' +
+          '<div class="exp-icon" style="font-size:22px;background:none;">' + cur.flag + '</div>' +
+          '<div><div class="exp-name">' + cur.code + '</div><div class="exp-cat">' + cur.name + '</div></div>' +
+          '<div style="text-align:right;margin-left:auto;">' +
+            '<div style="font-size:18px;font-weight:600;">' + rate + ' ₽</div>' +
+            '<div style="font-size:12px;color:' + diffColor + ';">' + diffSign + diff + ' ₽</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+      '</div>';
 
-  closeModal('limit');
-  document.getElementById('limit-cat').value = '';
-  document.getElementById('limit-amount').value = '';
-  toast('Лимит сохранён ✓');
-  loadLimits();
-}
-
-async function deleteLimit(category) {
-  await sb.from('limits').delete().eq('category', category);
-  toast('Лимит удалён');
-  loadLimits();
+  } catch(e) {
+    document.getElementById('limits-content').innerHTML =
+      '<div class="empty"><div class="empty-icon">📡</div><div class="empty-text">Не удалось загрузить курсы</div></div>';
+  }
 }
 
 // ── SAVINGS ────────────────────────────────────────────
