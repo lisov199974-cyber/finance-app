@@ -533,9 +533,13 @@ async function loadHome() {
     sb.from('budget').select('*')
   ]);
 
-  const budgetItems = (budget||[]).filter(b => b.key !== '__income__' && b.key !== '__from_savings__');
+  const budgetItems = (budget||[]).filter(b => b.key !== '__income__' && b.key !== '__from_savings__' && b.key !== '__period__');
   const savingsBonus = (budget||[]).find(b => b.key === '__from_savings__')?.value || 0;
-  const totalPlanBudget = budgetItems.reduce((s,b) => s + b.value, 0) + savingsBonus;
+  // Проверяем что бюджет создан в текущем периоде
+  const budgetPeriod = (budget||[]).find(b => b.key === '__period__')?.value;
+  const currentPeriod = periodStart();
+  const budgetIsCurrentPeriod = budgetPeriod && Math.abs(new Date(budgetPeriod) - new Date(currentPeriod)) < 24*60*60*1000;
+  const totalPlanBudget = budgetIsCurrentPeriod ? (budgetItems.reduce((s,b) => s + b.value, 0) + savingsBonus) : 0;
   // Скрываем траты из копилки помеченные как hidden
   const visibleExpenses = (expenses||[]).filter(e => !e.hidden);
   const totalSpent = visibleExpenses.reduce((s,e) => s + e.amount, 0);
@@ -945,7 +949,10 @@ async function saveBudget() {
   const lines = document.getElementById('budget-plan').value.trim().split('\n');
   if (!income) { toast('Введи сумму', 'error'); return; }
 
-  const rows = [{ key: '__income__', value: income }];
+  const saveBtn = document.querySelector('#modal-budget .btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.5'; saveBtn.textContent = 'Сохранение...'; }
+
+  const rows = [{ key: '__income__', value: income }, { key: '__period__', value: periodStart() }];
   let totalPlan = 0;
   for (const line of lines) {
     const parts = line.trim().split(/\s+/);
@@ -972,6 +979,8 @@ async function saveBudget() {
     toast('Бюджет сохранён ✓');
   }
 
+  const saveBtnEl = document.querySelector('#modal-budget .btn-primary');
+  if (saveBtnEl) { saveBtnEl.disabled = false; saveBtnEl.style.opacity = '1'; saveBtnEl.textContent = 'Сохранить'; }
   closeModal('budget');
   loadBudget();
 }
@@ -1083,26 +1092,34 @@ async function updateSavings(name, type) {
   const amount = parseFloat(document.getElementById('sav-amount').value);
   if (!amount) { toast('Введи сумму', 'error'); return; }
 
-  const { data } = await sb.from('accounts').select('balance').eq('name', name).single();
-  const newBal = type === 'add' ? data.balance + amount : data.balance - amount;
-  await sb.from('accounts').update({ balance: newBal }).eq('name', name);
+  // Блокируем кнопку от двойного нажатия
+  const btns = document.querySelectorAll('#modal-savings-body .btn');
+  btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
 
-  if (type === 'remove') {
-    // Снятое увеличивает план трат (остаток) — добавляем как бюджетную строку "__from_savings__"
-    const { data: existing } = await sb.from('budget').select('key, value').eq('key', '__from_savings__').maybeSingle();
-    if (!existing) {
-      await sb.from('budget').insert({ key: '__from_savings__', value: amount });
+  try {
+    const { data } = await sb.from('accounts').select('balance').eq('name', name).single();
+    const newBal = type === 'add' ? data.balance + amount : data.balance - amount;
+    await sb.from('accounts').update({ balance: newBal }).eq('name', name);
+
+    if (type === 'remove') {
+      const { data: existing } = await sb.from('budget').select('key, value').eq('key', '__from_savings__').maybeSingle();
+      if (!existing) {
+        await sb.from('budget').insert({ key: '__from_savings__', value: amount });
+      } else {
+        await sb.from('budget').update({ value: existing.value + amount }).eq('key', '__from_savings__');
+      }
+      toast(`-${money(amount)} снято, остаток бюджета увеличен ✓`);
     } else {
-      await sb.from('budget').update({ value: existing.value + amount }).eq('key', '__from_savings__');
+      toast(`+${money(amount)} добавлено ✓`);
     }
-    toast(`-${money(amount)} снято, остаток бюджета увеличен ✓`);
-  } else {
-    toast(`+${money(amount)} добавлено ✓`);
-  }
 
-  closeModal('savings');
-  loadSavings();
-  if (type === 'remove') { loadHome(); loadBudget(); }
+    closeModal('savings');
+    loadSavings();
+    if (type === 'remove') { loadHome(); loadBudget(); }
+  } catch(e) {
+    btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+    toast('Ошибка, попробуй ещё раз', 'error');
+  }
 }
 
 // ── СПИСОК ПОКУПОК ─────────────────────────────────────
