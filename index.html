@@ -963,8 +963,8 @@ async function saveBudget() {
   }
 
   await sb.from('budget').delete().neq('key', '___');
-  const { error } = await sb.from('budget').insert(rows);
-  if (error) { toast('Ошибка сохранения', 'error'); return; }
+  const { error } = await sb.from('budget').upsert(rows, { onConflict: 'key' });
+  if (error) { toast('Ошибка сохранения', 'error'); console.error(error); return; }
 
   // Зачисляем остаток в копилку если выбрана
   const remainder = income - totalPlan;
