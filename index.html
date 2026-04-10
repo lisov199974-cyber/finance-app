@@ -1050,6 +1050,7 @@ async function loadSavings() {
         <div class="savings-row">
           <button class="btn-sm" onclick="savingsAction('add','${a.name}')">+ Пополнить</button>
           <button class="btn-sm" onclick="savingsAction('remove','${a.name}')">− Снять</button>
+          <button class="btn-sm" onclick="savingsAction('edit','${a.name}',${a.balance})">✏️</button>
         </div>
       </div>`).join('') : '<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Счетов пока нет</div></div>'}
     <button class="btn btn-primary" onclick="newSavings()" style="margin-top:8px">+ Новый счёт</button>`;
@@ -1075,28 +1076,52 @@ async function createSavings() {
   loadSavings();
 }
 
-function savingsAction(type, name) {
-  document.getElementById('modal-savings-title').textContent = type === 'add' ? `Пополнить «${name}»` : `Снять с «${name}»`;
+function savingsAction(type, name, currentBalance) {
+  const titles = { add: `Пополнить «${name}»`, remove: `Снять с «${name}»`, edit: `Редактировать «${name}»` };
+  document.getElementById('modal-savings-title').textContent = titles[type];
+
   const hint = type === 'remove' ? '<div class="form-hint" style="margin-top:6px;">Снятая сумма добавится к остатку бюджета</div>' : '';
-  document.getElementById('modal-savings-body').innerHTML = `
-    <div class="form-group">
-      <label class="form-label">Сумма (₽)</label>
-      <input class="form-input" id="sav-amount" type="number" inputmode="decimal" placeholder="0">
-      ${hint}
-    </div>
-    <button class="btn btn-primary" onclick="updateSavings('${name}', '${type}')">Подтвердить</button>`;
+
+  if (type === 'edit') {
+    document.getElementById('modal-savings-body').innerHTML = `
+      <div class="form-group">
+        <label class="form-label">Новый баланс (₽)</label>
+        <input class="form-input" id="sav-amount" type="number" inputmode="decimal" value="${currentBalance}">
+        <div class="form-hint" style="margin-top:6px;">Введи точную сумму которая сейчас на счёте</div>
+      </div>
+      <button class="btn btn-primary" onclick="updateSavings('${name}', 'edit')">Сохранить</button>`;
+  } else {
+    document.getElementById('modal-savings-body').innerHTML = `
+      <div class="form-group">
+        <label class="form-label">Сумма (₽)</label>
+        <input class="form-input" id="sav-amount" type="number" inputmode="decimal" placeholder="0">
+        ${hint}
+      </div>
+      <button class="btn btn-primary" onclick="updateSavings('${name}', '${type}')">Подтвердить</button>`;
+  }
   openModal('savings');
 }
 
 async function updateSavings(name, type) {
-  const amount = parseFloat(document.getElementById('sav-amount').value);
-  if (!amount) { toast('Введи сумму', 'error'); return; }
+  const val = parseFloat(document.getElementById('sav-amount').value);
+  if (isNaN(val) || val === null || val === undefined || document.getElementById('sav-amount').value === '') {
+    toast('Введи сумму', 'error'); return;
+  }
 
   // Блокируем кнопку от двойного нажатия
   const btns = document.querySelectorAll('#modal-savings-body .btn');
   btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
 
   try {
+    if (type === 'edit') {
+      await sb.from('accounts').update({ balance: val }).eq('name', name);
+      toast(`Баланс «${name}» обновлён ✓`);
+      closeModal('savings');
+      loadSavings();
+      return;
+    }
+
+    const amount = val;
     const { data } = await sb.from('accounts').select('balance').eq('name', name).single();
     const newBal = type === 'add' ? data.balance + amount : data.balance - amount;
     await sb.from('accounts').update({ balance: newBal }).eq('name', name);
