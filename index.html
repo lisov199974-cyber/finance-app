@@ -869,7 +869,7 @@ async function loadBudget() {
   ]);
 
   const income = (budget||[]).find(b => b.key === '__income__')?.value || 0;
-  const items = (budget||[]).filter(b => b.key !== '__income__');
+  const items = (budget||[]).filter(b => b.key !== '__income__' && b.key !== '__period__' && b.key !== '__from_savings__');
   const factByCat = {};
   (expenses||[]).forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
   const totalSpent = Object.values(factByCat).reduce((s,v)=>s+v,0);
