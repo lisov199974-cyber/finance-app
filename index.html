@@ -537,8 +537,8 @@ async function loadHome() {
   const savingsBonus = (budget||[]).find(b => b.key === '__from_savings__')?.value || 0;
   // Проверяем что бюджет создан в текущем периоде
   const budgetPeriod = (budget||[]).find(b => b.key === '__period__')?.value;
-  const currentPeriod = periodStart();
-  const budgetIsCurrentPeriod = budgetPeriod && Math.abs(new Date(budgetPeriod) - new Date(currentPeriod)) < 24*60*60*1000;
+  const currentPeriod = new Date(periodStart()).getTime();
+  const budgetIsCurrentPeriod = budgetPeriod && Math.abs(budgetPeriod - currentPeriod) < 24*60*60*1000;
   const totalPlanBudget = budgetIsCurrentPeriod ? (budgetItems.reduce((s,b) => s + b.value, 0) + savingsBonus) : 0;
   // Скрываем траты из копилки помеченные как hidden
   const visibleExpenses = (expenses||[]).filter(e => !e.hidden);
@@ -952,7 +952,7 @@ async function saveBudget() {
   const saveBtn = document.querySelector('#modal-budget .btn-primary');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.5'; saveBtn.textContent = 'Сохранение...'; }
 
-  const rows = [{ key: '__income__', value: income }, { key: '__period__', value: periodStart() }];
+  const rows = [{ key: '__income__', value: income }, { key: '__period__', value: new Date(periodStart()).getTime() }];
   let totalPlan = 0;
   for (const line of lines) {
     const parts = line.trim().split(/\s+/);
