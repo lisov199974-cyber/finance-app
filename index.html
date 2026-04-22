@@ -7,34 +7,29 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 <style>
   :root {
-    --bg: #0f0f0f;
-    --bg2: #1a1a1a;
-    --bg3: #242424;
-    --border: rgba(255,255,255,0.08);
-    --text: #f0f0f0;
-    --text2: #888;
-    --text3: #555;
-    --green: #22c55e;
-    --red: #ef4444;
-    --amber: #f59e0b;
-    --blue: #3b82f6;
-    --accent: #22c55e;
-    --radius: 14px;
-    --radius-sm: 8px;
+    --bg: #f5f0e8;
+    --bg2: #ffffff;
+    --bg3: #ede8df;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a1814;
+    --text2: #6b6560;
+    --text3: #a8a39a;
+    --green: #2d7a4f;
+    --red: #c0392b;
+    --amber: #b7770d;
+    --blue: #1a5fa8;
+    --accent: #2d7a4f;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif; overflow: hidden; }
 
-  /* Telegram theme override */
-  body.tg-light {
-    --bg: #f2f2f7; --bg2: #ffffff; --bg3: #e5e5ea;
-    --border: rgba(0,0,0,0.08); --text: #1c1c1e; --text2: #6c6c70; --text3: #aeaeb2;
-  }
-
-  #app { height: 100dvh; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; position: relative; }
+  #app { height: 100dvh; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
 
   /* NAV */
-  .navbar { display: flex; background: var(--bg2); border-top: 0.5px solid var(--border); padding: 8px 0 max(8px, env(safe-area-inset-bottom)); flex-shrink: 0; }
+  .navbar { display: flex; background: var(--bg2); border-top: 0.5px solid var(--border); padding: 8px 0 max(10px, env(safe-area-inset-bottom)); flex-shrink: 0; box-shadow: 0 -1px 0 var(--border); }
   .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 2px; background: none; border: none; cursor: pointer; color: var(--text3); font-size: 10px; transition: color .2s; }
   .nav-btn.active { color: var(--accent); }
   .nav-btn svg { width: 22px; height: 22px; }
@@ -45,32 +40,53 @@
   .screen.active { display: flex; }
 
   /* HEADER */
-  .header { padding: 16px 20px 12px; background: var(--bg); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
-  .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .header { padding: 16px 20px 12px; background: var(--bg2); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
   .header p { font-size: 13px; color: var(--text2); margin-top: 2px; }
 
+  /* HERO CARD */
+  .hero-card { margin: 14px 16px 10px; border-radius: 20px; padding: 20px; background: linear-gradient(135deg, #2c3e6b 0%, #1a2a4a 60%, #0f1e38 100%); box-shadow: 0 4px 16px rgba(26,42,74,0.25); }
+  .hero-label { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 6px; }
+  .hero-amount { font-size: 34px; font-weight: 700; letter-spacing: -1.5px; color: #fff; }
+  .hero-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 3px; }
+  .hero-row { display: flex; gap: 10px; margin-top: 14px; }
+  .hero-pill { flex: 1; background: rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 12px; border: 0.5px solid rgba(255,255,255,0.12); }
+  .hero-pill-label { font-size: 10px; color: rgba(255,255,255,0.45); margin-bottom: 2px; }
+  .hero-pill-val { font-size: 15px; font-weight: 600; color: #fff; }
+
   /* CARDS */
-  .pad { padding: 16px 20px; }
-  .card { background: var(--bg2); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px 16px; margin-bottom: 10px; }
+  .pad { padding: 0 16px 16px; }
+  .card { background: var(--bg2); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
   .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .metric { background: var(--bg2); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px 16px; }
+  .metric { background: var(--bg2); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px 16px; box-shadow: var(--shadow); }
   .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
-  .metric-value { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
+  .metric-value { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
   .metric-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
 
   /* SECTION TITLE */
-  .section-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin: 16px 0 8px; }
+  .section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 12px 16px 6px; }
+
+  /* BUDGET BARS */
+  .budget-bar-item { margin: 0 16px 8px; border-radius: 14px; overflow: hidden; position: relative; height: 52px; background: var(--bg3); }
+  .budget-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 14px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .budget-bar-fill.striped { background-image: repeating-linear-gradient(-45deg,transparent,transparent 6px,rgba(255,255,255,0.25) 6px,rgba(255,255,255,0.25) 12px); }
+  .budget-bar-content { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
+  .budget-bar-left { display: flex; align-items: center; gap: 8px; }
+  .budget-bar-icon { font-size: 18px; }
+  .budget-bar-name { font-size: 13px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+  .budget-bar-spent { font-size: 13px; font-weight: 700; color: #fff; text-align: right; text-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+  .budget-bar-plan { font-size: 10px; color: rgba(255,255,255,0.65); text-align: right; }
 
   /* EXPENSE LIST */
-  .expense-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
+  .expense-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
   .expense-item:last-child { border-bottom: none; }
-  .exp-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; background: var(--bg3); }
+  .exp-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
   .exp-name { font-size: 14px; font-weight: 500; }
   .exp-cat { font-size: 12px; color: var(--text2); margin-top: 1px; }
-  .exp-amount { margin-left: auto; font-size: 15px; font-weight: 600; color: var(--red); white-space: nowrap; }
+  .exp-amount { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--red); white-space: nowrap; }
 
-  /* PROGRESS BAR */
-  .bar-row { margin-bottom: 14px; }
+  /* CLASSIC BAR */
+  .bar-row { margin-bottom: 12px; }
   .bar-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
   .bar-cat { color: var(--text); font-weight: 500; }
   .bar-nums { color: var(--text2); font-size: 12px; }
@@ -80,24 +96,24 @@
   /* FORM */
   .form-group { margin-bottom: 14px; }
   .form-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; display: block; }
-  .form-input { width: 100%; padding: 12px 14px; font-size: 16px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); outline: none; -webkit-appearance: none; }
-  .form-input:focus { border-color: var(--accent); }
+  .form-input { width: 100%; padding: 12px 14px; font-size: 16px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); outline: none; -webkit-appearance: none; }
+  .form-input:focus { border-color: var(--accent); background: var(--bg2); }
   .form-hint { font-size: 12px; color: var(--text3); margin-top: 5px; }
 
   /* BUTTONS */
   .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: opacity .15s, transform .1s; }
   .btn:active { transform: scale(0.98); opacity: 0.85; }
-  .btn-primary { background: var(--accent); color: #000; }
-  .btn-secondary { background: var(--bg3); color: var(--text); margin-top: 8px; }
-  .btn-sm { padding: 8px 14px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg3); color: var(--text); cursor: pointer; }
+  .btn-primary { background: #2c3e6b; color: #fff; }
+  .btn-secondary { background: var(--bg3); color: var(--text); margin-top: 8px; border: 0.5px solid var(--border); }
+  .btn-sm { padding: 8px 12px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--border); border-radius: 8px; background: var(--bg3); color: var(--text); cursor: pointer; }
 
   /* TABS */
   .tabs { display: flex; background: var(--bg3); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 16px; }
-  .tab { flex: 1; padding: 8px; font-size: 14px; font-weight: 500; text-align: center; border-radius: 6px; cursor: pointer; color: var(--text2); transition: all .2s; border: none; background: none; }
-  .tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .tab { flex: 1; padding: 8px; font-size: 14px; font-weight: 500; text-align: center; border-radius: 8px; cursor: pointer; color: var(--text2); transition: all .2s; border: none; background: none; }
+  .tab.active { background: var(--bg2); color: var(--text); box-shadow: var(--shadow); }
 
   /* UPLOAD */
-  .upload-area { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 36px 20px; text-align: center; cursor: pointer; margin-bottom: 14px; transition: border-color .2s; }
+  .upload-area { border: 1.5px dashed var(--border); border-radius: var(--radius); padding: 36px 20px; text-align: center; cursor: pointer; margin-bottom: 14px; transition: all .2s; background: var(--bg2); }
   .upload-area:hover { border-color: var(--accent); }
   .upload-icon { font-size: 36px; margin-bottom: 8px; }
   .upload-text { font-size: 14px; color: var(--text2); }
@@ -112,14 +128,14 @@
 
   /* BADGE */
   .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
-  .badge-ok { background: rgba(34,197,94,0.15); color: var(--green); }
-  .badge-warn { background: rgba(245,158,11,0.15); color: var(--amber); }
-  .badge-over { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-ok { background: rgba(45,122,79,0.12); color: var(--green); }
+  .badge-warn { background: rgba(183,119,13,0.12); color: var(--amber); }
+  .badge-over { background: rgba(192,57,43,0.12); color: var(--red); }
 
   /* SAVINGS */
-  .savings-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
-  .savings-name { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-  .savings-amount { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .savings-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .savings-name { font-size: 12px; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .savings-amount { font-size: 26px; font-weight: 700; letter-spacing: -1px; color: var(--text); }
   .savings-row { display: flex; gap: 8px; margin-top: 12px; }
   .savings-row .btn-sm { flex: 1; text-align: center; }
 
@@ -128,22 +144,16 @@
   .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 7px; color: var(--text2); }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-  /* LIMIT ITEM */
-  .limit-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
-  .limit-item:last-child { border-bottom: none; }
-  .limit-name { font-size: 14px; font-weight: 500; }
-  .limit-spent { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
   /* LOADER */
   .loader { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--text3); font-size: 14px; }
   .spin { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* TOAST */
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 18px; font-size: 14px; font-weight: 500; z-index: 1000; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; max-width: 90vw; }
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); border-radius: 20px; padding: 10px 18px; font-size: 14px; font-weight: 500; z-index: 1000; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; max-width: 90vw; }
   .toast.show { opacity: 1; }
-  .toast.success { border-color: var(--green); color: var(--green); }
-  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.success { background: #2c3e6b; color: #fff; }
+  .toast.error { background: var(--red); color: #fff; }
 
   /* EMPTY */
   .empty { text-align: center; padding: 40px 20px; color: var(--text3); }
@@ -151,45 +161,49 @@
   .empty-text { font-size: 14px; }
 
   /* MODAL */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: flex-end; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; display: none; align-items: flex-end; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--bg2); border-radius: var(--radius) var(--radius) 0 0; padding: 20px 20px max(20px, env(safe-area-inset-bottom)); width: 100%; max-height: 85dvh; overflow-y: auto; }
-  .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
-  .modal-close { float: right; background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; line-height: 1; }
+  .modal { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 20px 20px max(20px, env(safe-area-inset-bottom)); width: 100%; max-height: 85dvh; overflow-y: auto; border-top: 0.5px solid var(--border); }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .modal-close { float: right; background: var(--bg3); border: none; color: var(--text2); font-size: 16px; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-  /* CAT CHIPS */
+  /* CHIPS */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-  .chip { padding: 7px 13px; border-radius: 20px; font-size: 13px; background: var(--bg3); border: 0.5px solid var(--border); cursor: pointer; color: var(--text2); transition: all .15s; }
-  .chip.selected { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .chip { padding: 6px 13px; border-radius: 20px; font-size: 13px; background: var(--bg3); border: 0.5px solid var(--border); cursor: pointer; color: var(--text2); transition: all .15s; }
+  .chip.selected { background: #2c3e6b; color: #fff; border-color: #2c3e6b; font-weight: 600; }
+
+  /* TOP ACTION BUTTONS */
+  .top-action { background: var(--bg3); border: 0.5px solid var(--border); border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .top-action:hover { background: var(--border); }
+  .top-action svg { width: 18px; height: 18px; }
 </style>
 </head>
 <body>
-
 <div id="app">
   <div class="screens">
     <!-- HOME -->
     <div class="screen active" id="s-home">
-      <div class="header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="header" style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);">
         <div>
           <h1 id="home-month">Загрузка...</h1>
           <p>Семейный бюджет</p>
         </div>
-        <div style="display:flex;gap:16px;align-items:center;">
-          <button onclick="openShoppingList()" title="Список покупок" style="background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="openShoppingList()" class="top-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
             Покупки
           </button>
-          <button onclick="openHistory()" title="История" style="background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <button onclick="openHistory()" class="top-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             История
           </button>
-          <button onclick="undoLastExpense()" title="Отменить" style="background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 6 6.7L3 7"/></svg>
+          <button onclick="undoLastExpense()" class="top-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13A9 9 0 1 0 6 6.7L3 7"/></svg>
             Отмена
           </button>
         </div>
       </div>
-      <div class="pad" id="home-content">
+      <div id="home-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
       </div>
     </div>
@@ -197,13 +211,11 @@
     <!-- ADD -->
     <div class="screen" id="s-add">
       <div class="header"><h1>Добавить расход</h1></div>
-      <div class="pad">
+      <div class="pad" style="padding-top:16px;">
         <div class="tabs">
           <button class="tab active" onclick="switchTab('manual')">Вручную</button>
           <button class="tab" onclick="switchTab('photo')">Скриншот банка</button>
         </div>
-
-        <!-- MANUAL -->
         <div id="tab-manual">
           <div class="form-group">
             <label class="form-label">Сумма</label>
@@ -212,7 +224,7 @@
           <div class="form-group">
             <label class="form-label">Категория</label>
             <input class="form-input" id="add-cat" type="text" placeholder="продукты, такси...">
-            <div class="chips" id="cat-chips"></div>
+            <div class="chips" id="cat-chips" style="margin-top:8px;"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Комментарий (необязательно)</label>
@@ -220,8 +232,6 @@
           </div>
           <button class="btn btn-primary" id="save-expense-btn" onclick="saveExpense()">Сохранить</button>
         </div>
-
-        <!-- PHOTO -->
         <div id="tab-photo" style="display:none">
           <div id="upload-area" class="upload-area" onclick="document.getElementById('file-input').click()">
             <div class="upload-icon">📷</div>
@@ -250,7 +260,7 @@
     <!-- STATS -->
     <div class="screen" id="s-stats">
       <div class="header"><h1>Статистика</h1><p id="stats-period"></p></div>
-      <div class="pad" id="stats-content">
+      <div class="pad" style="padding-top:16px;" id="stats-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
       </div>
     </div>
@@ -258,7 +268,7 @@
     <!-- BUDGET -->
     <div class="screen" id="s-budget">
       <div class="header"><h1>Бюджет</h1><p id="budget-period"></p></div>
-      <div class="pad" id="budget-content">
+      <div class="pad" style="padding-top:16px;" id="budget-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
       </div>
     </div>
@@ -266,7 +276,7 @@
     <!-- RATES -->
     <div class="screen" id="s-limits">
       <div class="header"><h1>Курс валют</h1><p id="rates-updated"></p></div>
-      <div class="pad" id="limits-content">
+      <div class="pad" style="padding-top:16px;" id="limits-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
       </div>
     </div>
@@ -274,7 +284,7 @@
     <!-- SAVINGS -->
     <div class="screen" id="s-savings">
       <div class="header"><h1>Накопления</h1></div>
-      <div class="pad" id="savings-content">
+      <div class="pad" style="padding-top:16px;" id="savings-content">
         <div class="loader"><div class="spin"></div>Загрузка...</div>
       </div>
     </div>
@@ -282,27 +292,27 @@
 
   <nav class="navbar">
     <button class="nav-btn active" id="nav-home" onclick="go('home')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Главная
     </button>
     <button class="nav-btn" id="nav-add" onclick="go('add')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Расход
     </button>
     <button class="nav-btn" id="nav-stats" onclick="go('stats')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Статистика
     </button>
     <button class="nav-btn" id="nav-budget" onclick="go('budget')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       Бюджет
     </button>
     <button class="nav-btn" id="nav-limits" onclick="go('limits')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
       Курс
     </button>
     <button class="nav-btn" id="nav-savings" onclick="go('savings')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 6v6l4 2"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.3 1.5 4.05 3 5.5l7 7 7-7z"/></svg>
       Копилка
     </button>
   </nav>
@@ -347,9 +357,9 @@
       <div class="form-hint">Каждая категория с новой строки: название сумма</div>
     </div>
     <div id="budget-remainder-block" style="display:none;margin-bottom:14px;">
-      <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;">
+      <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;border:0.5px solid var(--border);">
         <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Остаток для копилки</div>
-        <div id="budget-remainder-val" style="font-size:22px;font-weight:600;color:var(--green)"></div>
+        <div id="budget-remainder-val" style="font-size:22px;font-weight:700;color:var(--green)"></div>
       </div>
     </div>
     <div id="budget-savings-block" style="display:none;margin-bottom:14px;">
@@ -366,15 +376,14 @@
 
 <!-- MODAL: СПИСОК ПОКУПОК -->
 <div class="modal-overlay" id="modal-shopping" onclick="if(event.target===this)closeModal('shopping')" style="align-items:flex-end;">
-  <div class="modal" style="max-height:75dvh;display:flex;flex-direction:column;border-radius:var(--radius) var(--radius) 0 0;">
+  <div class="modal" style="max-height:75dvh;display:flex;flex-direction:column;border-radius:20px 20px 0 0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0;">
-      <div style="font-size:17px;font-weight:600;">Список покупок</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text);">Список покупок</div>
       <button class="modal-close" onclick="closeModal('shopping')" style="float:none;">×</button>
     </div>
     <div id="shop-list" style="flex:1;overflow-y:auto;min-height:0;"></div>
     <div style="flex-shrink:0;padding-top:10px;border-top:0.5px solid var(--border);margin-top:8px;">
-      <input class="form-input" id="shop-name" placeholder="Добавить позицию..." style="margin-bottom:8px;"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();addShopItem();}">
+      <input class="form-input" id="shop-name" placeholder="Добавить позицию..." style="margin-bottom:8px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addShopItem();}">
       <button class="btn btn-secondary" onclick="clearDoneItems()" style="font-size:13px;padding:10px;">Очистить отмеченные</button>
     </div>
   </div>
@@ -385,9 +394,9 @@
   <div class="modal" style="max-height:90dvh;">
     <button class="modal-close" onclick="closeModal('history')">×</button>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <button onclick="changeHistoryMonth(-1)" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 8px;">‹</button>
+      <button onclick="changeHistoryMonth(-1)" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;">‹</button>
       <div class="modal-title" id="history-title" style="margin:0"></div>
-      <button onclick="changeHistoryMonth(1)" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px 8px;">›</button>
+      <button onclick="changeHistoryMonth(1)" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;">›</button>
     </div>
     <div id="history-content"><div class="loader"><div class="spin"></div>Загрузка...</div></div>
   </div>
@@ -403,70 +412,30 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   global: { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
 });
 
-// Telegram theme
 const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.expand();
-  tg.ready();
-  if (tg.colorScheme === 'light') document.body.classList.add('tg-light');
-}
+if (tg) { tg.expand(); tg.ready(); }
 
-// ── UTILS ──────────────────────────────────────────────
 const money = n => Math.round(n).toLocaleString('ru-RU') + ' ₽';
 const monthStart = () => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString(); };
 const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 
-// ── ПЕРИОД ЗАРПЛАТА/АВАНС ─────────────────────────────
-// Зарплата 12-го, аванс 27-го. Если выходной — сдвигаем раньше.
-function getPayday(year, month, day) {
-  let d = new Date(year, month, day);
-  const dow = d.getDay(); // 0=вс, 6=сб
-  if (dow === 0) d.setDate(day - 2); // вс → пт
-  else if (dow === 6) d.setDate(day - 1); // сб → пт
-  return d;
-}
-
-function periodStart() {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-
-  const salary = getPayday(y, m, 12);   // зарплата 12-го
-  const advance = getPayday(y, m, 27);  // аванс 27-го
-
-  let start;
-  if (d >= advance.getDate()) {
-    // После аванса — период с аванса по ~12 следующего
-    start = new Date(y, m, advance.getDate());
-  } else if (d >= salary.getDate()) {
-    // После зарплаты — период с зарплаты по ~27
-    start = new Date(y, m, salary.getDate());
-  } else {
-    // До зарплаты — период с аванса прошлого месяца
-    const prevAdvance = getPayday(y, m - 1, 27);
-    start = new Date(y, m - 1, prevAdvance.getDate());
-  }
-  start.setHours(0, 0, 0, 0);
-  return start.toISOString();
-}
-
-function periodLabel() {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-  const salary = getPayday(y, m, 12);
-  const advance = getPayday(y, m, 27);
-
-  if (d >= advance.getDate()) {
-    const nextSalary = getPayday(y, m + 1, 12);
-    return `${advance.getDate()} ${months[m].slice(0,3)} — ${nextSalary.getDate()} ${months[m+1 > 11 ? 0 : m+1].slice(0,3)}`;
-  } else if (d >= salary.getDate()) {
-    return `${salary.getDate()} ${months[m].slice(0,3)} — ${advance.getDate()} ${months[m].slice(0,3)}`;
-  } else {
-    const prevAdvance = getPayday(y, m - 1, 27);
-    return `${prevAdvance.getDate()} ${months[m-1 < 0 ? 11 : m-1].slice(0,3)} — ${salary.getDate()} ${months[m].slice(0,3)}`;
-  }
-}
-const catEmoji = c => ({ продукты:'🛒', еда:'🍔', такси:'🚖', транспорт:'🚌', аптеки:'💊', здоровье:'💊', красота:'💄', кафе:'☕', рестораны:'🍽', одежда:'👗', развлечения:'🎮', связь:'📱', коммунальные:'🏠' }[c?.toLowerCase()] || '💳');
-const barColor = pct => pct >= 100 ? '#ef4444' : pct >= 85 ? '#f59e0b' : '#22c55e';
+const CAT_CONFIG = {
+  продукты:{icon:'🛒',color:'#2d7a4f'}, еда:{icon:'🍔',color:'#b7770d'}, фастфуд:{icon:'🍟',color:'#b7770d'},
+  такси:{icon:'🚖',color:'#b7770d'}, транспорт:{icon:'🚌',color:'#1a5fa8'}, аптеки:{icon:'💊',color:'#c0392b'},
+  здоровье:{icon:'🏥',color:'#c0392b'}, красота:{icon:'💄',color:'#8e3a7a'}, кафе:{icon:'☕',color:'#7a5c3a'},
+  рестораны:{icon:'🍽',color:'#b7770d'}, 'кафе и рестораны':{icon:'🍽',color:'#b7770d'},
+  одежда:{icon:'👗',color:'#6b3fa0'}, развлечения:{icon:'🎮',color:'#1a5fa8'}, связь:{icon:'📱',color:'#555'},
+  коммунальные:{icon:'🏠',color:'#1a5fa8'}, квартира:{icon:'🏠',color:'#1a5fa8'},
+  подписки:{icon:'📺',color:'#6b3fa0'}, 'спортивный зал':{icon:'🏋️',color:'#2d7a4f'},
+  психолог:{icon:'🧠',color:'#6b3fa0'}, стоматолог:{icon:'🦷',color:'#c0392b'},
+  образование:{icon:'📚',color:'#1a5fa8'}, такси:{icon:'🚖',color:'#b7770d'},
+  каршеринг:{icon:'🚗',color:'#b7770d'}, кальян:{icon:'💨',color:'#666'},
+  прочее:{icon:'📦',color:'#888'}, 'прочие расходы':{icon:'📦',color:'#888'},
+  'обед на работе':{icon:'🥗',color:'#2d7a4f'}, 'обед':{icon:'🥗',color:'#2d7a4f'},
+};
+const catEmoji = c => CAT_CONFIG[c?.toLowerCase()]?.icon || '💳';
+const catColor = c => CAT_CONFIG[c?.toLowerCase()]?.color || '#888';
+const barColor = pct => pct >= 100 ? '#c0392b' : pct >= 85 ? '#b7770d' : '#2d7a4f';
 
 function toast(msg, type='success') {
   const el = document.getElementById('toast');
@@ -475,7 +444,6 @@ function toast(msg, type='success') {
   setTimeout(() => el.className = 'toast', 2500);
 }
 
-// ── NAVIGATION ─────────────────────────────────────────
 let currentScreen = 'home';
 function go(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -495,15 +463,48 @@ function switchTab(tab) {
 function openModal(id) { document.getElementById('modal-' + id).classList.add('open'); }
 function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
 
-// ── ОТМЕНА ПОСЛЕДНЕГО ДЕЙСТВИЯ ────────────────────────
+function getPayday(year, month, day) {
+  let d = new Date(year, month, day);
+  const dow = d.getDay();
+  if (dow === 0) d.setDate(day - 2);
+  else if (dow === 6) d.setDate(day - 1);
+  return d;
+}
+
+function periodStart() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const salary = getPayday(y, m, 12);
+  const advance = getPayday(y, m, 27);
+  let start;
+  if (d >= advance.getDate()) start = new Date(y, m, advance.getDate());
+  else if (d >= salary.getDate()) start = new Date(y, m, salary.getDate());
+  else { const prevAdvance = getPayday(y, m - 1, 27); start = new Date(y, m - 1, prevAdvance.getDate()); }
+  start.setHours(0, 0, 0, 0);
+  return start.toISOString();
+}
+
+function periodLabel() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const salary = getPayday(y, m, 12);
+  const advance = getPayday(y, m, 27);
+  if (d >= advance.getDate()) {
+    const nextSalary = getPayday(y, m + 1, 12);
+    return `${advance.getDate()} ${months[m].slice(0,3)} — ${nextSalary.getDate()} ${months[m+1>11?0:m+1].slice(0,3)}`;
+  } else if (d >= salary.getDate()) {
+    return `${salary.getDate()} ${months[m].slice(0,3)} — ${advance.getDate()} ${months[m].slice(0,3)}`;
+  } else {
+    const prevAdvance = getPayday(y, m - 1, 27);
+    return `${prevAdvance.getDate()} ${months[m-1<0?11:m-1].slice(0,3)} — ${salary.getDate()} ${months[m].slice(0,3)}`;
+  }
+}
+
 async function undoLastExpense() {
   const { data } = await sb.from('expenses').select('*').order('date', { ascending: false }).limit(1);
   if (!data || !data.length) { toast('Нечего отменять', 'error'); return; }
-
   const last = data[0];
   const date = new Date(last.date).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-
-  // Показываем модал с подтверждением
   document.getElementById('modal-savings-title').textContent = 'Отменить последнюю трату?';
   document.getElementById('modal-savings-body').innerHTML = `
     <div class="card" style="margin-bottom:16px;">
@@ -523,11 +524,8 @@ async function confirmUndo(id) {
   loadHome();
 }
 
-// ── HOME ───────────────────────────────────────────────
 async function loadHome() {
-  const now = new Date();
   document.getElementById('home-month').textContent = periodLabel();
-
   const [{ data: expenses }, { data: budget }] = await Promise.all([
     sb.from('expenses').select('*').gte('date', periodStart()),
     sb.from('budget').select('*')
@@ -535,83 +533,80 @@ async function loadHome() {
 
   const budgetItems = (budget||[]).filter(b => b.key !== '__income__' && b.key !== '__from_savings__' && b.key !== '__period__');
   const savingsBonus = (budget||[]).find(b => b.key === '__from_savings__')?.value || 0;
-  // Проверяем что бюджет создан в текущем периоде
   const budgetPeriod = (budget||[]).find(b => b.key === '__period__')?.value;
   const currentPeriod = new Date(periodStart()).getTime();
   const budgetIsCurrentPeriod = budgetPeriod && Math.abs(budgetPeriod - currentPeriod) < 24*60*60*1000;
-  const totalPlanBudget = budgetIsCurrentPeriod ? (budgetItems.reduce((s,b) => s + b.value, 0) + savingsBonus) : 0;
-  // Скрываем траты из копилки помеченные как hidden
+  const totalPlan = budgetIsCurrentPeriod ? (budgetItems.reduce((s,b) => s + b.value, 0) + savingsBonus) : 0;
   const visibleExpenses = (expenses||[]).filter(e => !e.hidden);
   const totalSpent = visibleExpenses.reduce((s,e) => s + e.amount, 0);
   const recent = [...visibleExpenses].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
   const factByCat = {};
   visibleExpenses.forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
-  // Остаток = план минус потрачено (не доход!)
-  const budgetRemainder = totalPlanBudget - totalSpent;
+  const remaining = totalPlan > 0 ? totalPlan - totalSpent : 0;
 
-  document.getElementById('home-content').innerHTML = `
-    <div class="card-grid">
-      <div class="metric">
-        <div class="metric-label">Потрачено</div>
-        <div class="metric-value" style="color:var(--red)">${money(totalSpent)}</div>
-        ${totalPlanBudget ? `<div class="metric-sub">из ${money(totalPlanBudget)} по плану</div>` : ''}
-      </div>
-      <div class="metric">
-        <div class="metric-label">Осталось</div>
-        <div class="metric-value" style="color:${budgetRemainder>=0?'var(--green)':'var(--red)'}">${money(Math.abs(budgetRemainder))}</div>
-        <div class="metric-sub">${totalPlanBudget ? (budgetRemainder>=0?'по плану':'перерасход!') : 'бюджет не задан'}</div>
-      </div>
-    </div>
+  const heroColor = remaining < 0 ? '#c0392b' : '#fff';
+  const unplanned = Object.entries(factByCat).filter(([cat]) => !budgetItems.find(b => b.key === cat));
 
-    ${budgetItems.length ? `
-      <div class="section-title">Бюджет по категориям</div>
-      <div class="card">
-        ${budgetItems.map(b => {
-          const spent = factByCat[b.key] || 0;
-          const pct = Math.min(Math.round(spent / b.value * 100), 100);
-          return `<div class="bar-row">
-            <div class="bar-header">
-              <span class="bar-cat">${b.key}</span>
-              <span class="bar-nums">${money(spent)} / ${money(b.value)}</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(pct*100/100)}"></div></div>
-          </div>`;
-        }).join('')}
-      </div>` : ''}
+  document.getElementById('home-content').innerHTML =
+    '<div class="hero-card">' +
+      '<div class="hero-label">ОСТАТОК ПЕРИОДА</div>' +
+      '<div class="hero-amount" style="color:' + (remaining < 0 ? '#ff8a80' : '#fff') + '">' + money(Math.abs(remaining)) + '</div>' +
+      '<div class="hero-sub">' + (remaining < 0 ? '⚠️ Перерасход' : totalPlan ? 'из плана ' + money(totalPlan) : 'Бюджет не задан') + '</div>' +
+      '<div class="hero-row">' +
+        '<div class="hero-pill"><div class="hero-pill-label">Потрачено</div><div class="hero-pill-val" style="color:#ff8a80">' + money(totalSpent) + '</div></div>' +
+        '<div class="hero-pill"><div class="hero-pill-label">Период</div><div class="hero-pill-val" style="font-size:12px">' + periodLabel() + '</div></div>' +
+      '</div>' +
+    '</div>' +
 
-    ${budgetItems.length && Object.entries(factByCat).filter(([cat]) => !budgetItems.find(b => b.key === cat)).length ? (() => {
-      const unplanned = Object.entries(factByCat).filter(([cat]) => !budgetItems.find(b => b.key === cat)).sort((a,b) => b[1]-a[1]);
-      const maxAmt = Math.max(...unplanned.map(([,v]) => v));
-      return '<div class="section-title">Внеплановые траты</div><div class="card">' +
-        unplanned.map(([cat, amt]) => {
-          const pct = Math.round(amt / maxAmt * 100);
-          return '<div class="bar-row"><div class="bar-header"><span class="bar-cat">' + catEmoji(cat) + ' ' + cat + '</span><span class="bar-nums">' + money(amt) + '</span></div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:#8b5cf6"></div></div></div>';
-        }).join('') + '</div>';
-    })() : ''}
+    (budgetItems.length && budgetIsCurrentPeriod ?
+      '<div class="section-title">По категориям</div>' +
+      budgetItems.map(b => {
+        const spent = factByCat[b.key] || 0;
+        const pct = Math.min(Math.round(spent / b.value * 100), 100);
+        const col = barColor(pct); const isOver = spent > b.value;
+        return '<div class="budget-bar-item">' +
+          '<div class="budget-bar-fill' + (isOver ? ' striped' : '') + '" style="width:' + pct + '%;background:' + col + '"></div>' +
+          '<div class="budget-bar-content">' +
+            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(b.key) + '</span><span class="budget-bar-name">' + b.key + (isOver ? ' ⚠️' : '') + '</span></div>' +
+            '<div><div class="budget-bar-spent">' + money(spent) + '</div><div class="budget-bar-plan">из ' + money(b.value) + '</div></div>' +
+          '</div></div>';
+      }).join('') : '') +
 
-    <div class="section-title">Последние расходы</div>
-    <div class="card">
-      ${recent.length ? recent.map(e => `
-        <div class="expense-item">
-          <div class="exp-icon">${catEmoji(e.category)}</div>
-          <div><div class="exp-name">${e.category}</div><div class="exp-cat">${new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'})}</div></div>
-          <div class="exp-amount">-${money(e.amount)}</div>
-        </div>`).join('') : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Расходов пока нет</div></div>'}
-    </div>`;
+    (unplanned.length ?
+      '<div class="section-title">Внеплановые</div>' +
+      unplanned.sort((a,b) => b[1]-a[1]).map(([cat, amt]) => {
+        const maxU = Math.max(...unplanned.map(([,v]) => v));
+        const pct = Math.round(amt / maxU * 100);
+        return '<div class="budget-bar-item">' +
+          '<div class="budget-bar-fill" style="width:' + pct + '%;background:' + catColor(cat) + ';opacity:0.7"></div>' +
+          '<div class="budget-bar-content">' +
+            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(cat) + '</span><span class="budget-bar-name">' + cat + '</span></div>' +
+            '<div class="budget-bar-spent">' + money(amt) + '</div>' +
+          '</div></div>';
+      }).join('') : '') +
+
+    '<div class="section-title">Последние расходы</div>' +
+    '<div style="margin:0 16px 16px;"><div class="card">' +
+    (recent.length ? recent.map(e =>
+      '<div class="expense-item">' +
+        '<div class="exp-icon" style="background:' + catColor(e.category) + '18;">' + catEmoji(e.category) + '</div>' +
+        '<div><div class="exp-name">' + e.category + '</div><div class="exp-cat">' + new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}) + '</div></div>' +
+        '<div class="exp-amount">-' + money(e.amount) + '</div>' +
+      '</div>'
+    ).join('') : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Расходов пока нет</div></div>') +
+    '</div></div>';
 }
 
-// ── ADD ────────────────────────────────────────────────
 async function loadAdd() {
   const { data: cats } = await sb.from('categories').select('name').limit(20);
-  const chips = document.getElementById('cat-chips');
-  chips.innerHTML = (cats||[]).map(c =>
-    `<div class="chip" onclick="selectCat('${c.name}')">${c.name}</div>`
+  document.getElementById('cat-chips').innerHTML = (cats||[]).map(c =>
+    `<div class="chip" onclick="selectCat('${c.name}')">${catEmoji(c.name)} ${c.name}</div>`
   ).join('');
 }
 
 function selectCat(name) {
   document.getElementById('add-cat').value = name;
-  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('selected', c.textContent === name));
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('selected', c.textContent.includes(name)));
 }
 
 let pendingExpense = null;
@@ -620,64 +615,30 @@ async function saveExpense() {
   const amount = parseFloat(document.getElementById('add-amount').value);
   const category = document.getElementById('add-cat').value.trim().toLowerCase();
   if (!amount || !category) { toast('Заполни сумму и категорию', 'error'); return; }
-
-  // Проверяем — новая ли категория
   const { data: cats } = await sb.from('categories').select('name');
   const existing = (cats||[]).map(c => c.name.toLowerCase());
   const isNew = !existing.includes(category);
-
   if (isNew && existing.length > 0) {
-    // Показываем предупреждение
     pendingExpense = { amount, category };
-    const similar = existing.filter(c =>
-      c.includes(category.slice(0,3)) || category.includes(c.slice(0,3))
-    ).slice(0, 5);
-    const similarHtml = similar.length ?
-      `<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Похожие категории:<br>${similar.map(c =>
-        `<span onclick="useSimilarCat('${c}')" style="display:inline-block;margin:4px 4px 0 0;padding:5px 10px;background:var(--bg3);border-radius:20px;cursor:pointer;font-size:13px">${c}</span>`
-      ).join('')}</div>` : '';
+    const similar = existing.filter(c => c.includes(category.slice(0,3)) || category.includes(c.slice(0,3))).slice(0, 5);
+    const similarHtml = similar.length ? `<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Похожие:<br>${similar.map(c => `<span onclick="useSimilarCat('${c}')" style="display:inline-block;margin:4px 4px 0 0;padding:5px 10px;background:var(--bg3);border-radius:20px;cursor:pointer;font-size:13px">${c}</span>`).join('')}</div>` : '';
     document.getElementById('modal-savings-title').textContent = 'Новая категория';
-    document.getElementById('modal-savings-body').innerHTML = `
-      <div style="margin-bottom:12px;font-size:14px;">Категория <b>${category}</b> не существует. Это новая категория?</div>
-      ${similarHtml}
-      <button class="btn btn-primary" onclick="confirmNewCategory()" style="margin-bottom:8px">Да, создать «${category}»</button>
-      <button class="btn btn-secondary" onclick="closeModal('savings');pendingExpense=null;">Отмена</button>`;
-    openModal('savings');
-    return;
+    document.getElementById('modal-savings-body').innerHTML = `<div style="margin-bottom:12px;font-size:14px;">Категория <b>${category}</b> не существует.</div>${similarHtml}<button class="btn btn-primary" onclick="confirmNewCategory()" style="margin-bottom:8px">Да, создать «${category}»</button><button class="btn btn-secondary" onclick="closeModal('savings');pendingExpense=null;">Отмена</button>`;
+    openModal('savings'); return;
   }
-
   await doSaveExpense(amount, category);
 }
 
-function useSimilarCat(cat) {
-  closeModal('savings');
-  pendingExpense = null;
-  document.getElementById('add-cat').value = cat;
-  selectCat(cat);
-}
-
-async function confirmNewCategory() {
-  closeModal('savings');
-  if (!pendingExpense) return;
-  await doSaveExpense(pendingExpense.amount, pendingExpense.category);
-  pendingExpense = null;
-}
+function useSimilarCat(cat) { closeModal('savings'); pendingExpense = null; document.getElementById('add-cat').value = cat; selectCat(cat); }
+async function confirmNewCategory() { closeModal('savings'); if (!pendingExpense) return; await doSaveExpense(pendingExpense.amount, pendingExpense.category); pendingExpense = null; }
 
 async function doSaveExpense(amount, category) {
   const btn = document.getElementById('save-expense-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Сохранение...'; btn.style.opacity = '0.5'; }
-
   const { error } = await sb.from('expenses').insert({ amount, category, date: new Date().toISOString() });
-
-  if (error) {
-    toast('Ошибка сохранения', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; btn.style.opacity = '1'; }
-    return;
-  }
-
+  if (error) { toast('Ошибка сохранения', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; btn.style.opacity = '1'; } return; }
   await sb.from('categories').upsert({ name: category }, { onConflict: 'name' });
   await checkLimit(category);
-
   document.getElementById('add-amount').value = '';
   document.getElementById('add-cat').value = '';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
@@ -691,12 +652,9 @@ async function checkLimit(category) {
   if (!lim) return;
   const { data: fact } = await sb.from('expenses').select('amount').eq('category', category).gte('date', periodStart());
   const spent = (fact||[]).reduce((s,e) => s + e.amount, 0);
-  if (spent > lim.amount) {
-    toast(`⚠️ Лимит «${category}» превышен на ${money(spent - lim.amount)}`, 'error');
-  }
+  if (spent > lim.amount) toast(`⚠️ Лимит «${category}» превышен на ${money(spent - lim.amount)}`, 'error');
 }
 
-// ── PHOTO / OCR ────────────────────────────────────────
 let photoExpenses = [];
 
 async function handlePhoto(input) {
@@ -704,41 +662,21 @@ async function handlePhoto(input) {
   document.getElementById('photo-result').style.display = 'none';
   document.getElementById('photo-loading').style.display = 'flex';
   document.getElementById('upload-area').style.display = 'none';
-
   const file = input.files[0];
   const reader = new FileReader();
   reader.onload = async e => {
     const base64 = e.target.result.split(',')[1];
-
-    // Показываем превью скриншота
     document.getElementById('screenshot-img').src = e.target.result;
     document.getElementById('photo-preview-img').style.display = 'block';
-
     try {
-      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64, mediaType: file.type })
-      });
+      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ image: base64, mediaType: file.type }) });
       let text = await res.text();
       text = text.replace(/```json|```/g, '').trim();
       photoExpenses = JSON.parse(text);
-
-      // Применяем базу мерчантов
       const { data: merchants } = await sb.from('merchant_map').select('*');
-      const mMap = {};
-      (merchants||[]).forEach(m => mMap[m.merchant.toLowerCase()] = m.category);
-      photoExpenses = photoExpenses.map(e => {
-        const key = e.category.toLowerCase();
-        return { ...e, original: e.category, category: mMap[key] || e.category };
-      });
-
-      document.getElementById('preview-items').innerHTML = photoExpenses.map((e, i) => `
-        <div class="preview-item">
-          <input value="${e.category}" onchange="photoExpenses[${i}].category=this.value" style="flex:1;text-align:left">
-          <input value="${Math.round(e.amount)}" onchange="photoExpenses[${i}].amount=parseFloat(this.value)||0" type="number">
-        </div>`).join('');
-
+      const mMap = {}; (merchants||[]).forEach(m => mMap[m.merchant.toLowerCase()] = m.category);
+      photoExpenses = photoExpenses.map(e => { const key = e.category.toLowerCase(); return { ...e, original: e.category, category: mMap[key] || e.category }; });
+      document.getElementById('preview-items').innerHTML = photoExpenses.map((e, i) => `<div class="preview-item"><input value="${e.category}" onchange="photoExpenses[${i}].category=this.value" style="flex:1;text-align:left"><input value="${Math.round(e.amount)}" onchange="photoExpenses[${i}].amount=parseFloat(this.value)||0" type="number"></div>`).join('');
       document.getElementById('photo-loading').style.display = 'none';
       document.getElementById('photo-result').style.display = 'block';
     } catch(err) {
@@ -753,35 +691,16 @@ async function handlePhoto(input) {
 
 async function savePhotoExpenses() {
   if (!photoExpenses.length) return;
-
-  // Блокируем кнопку чтобы не дать нажать дважды
   const btn = document.getElementById('save-photo-btn');
   if (btn.disabled) return;
-  btn.disabled = true;
-  btn.textContent = 'Сохранение...';
-  btn.style.opacity = '0.5';
-
-  const rows = photoExpenses.filter(e => e.amount > 0).map(e => ({
-    amount: e.amount, category: e.category.toLowerCase(), date: new Date().toISOString()
-  }));
-
+  btn.disabled = true; btn.textContent = 'Сохранение...'; btn.style.opacity = '0.5';
+  const rows = photoExpenses.filter(e => e.amount > 0).map(e => ({ amount: e.amount, category: e.category.toLowerCase(), date: new Date().toISOString() }));
   const { error } = await sb.from('expenses').insert(rows);
-  if (error) {
-    toast('Ошибка сохранения', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Сохранить все';
-    btn.style.opacity = '1';
-    return;
-  }
-
-  // Сохраняем категории и мерчанты
+  if (error) { toast('Ошибка сохранения', 'error'); btn.disabled = false; btn.textContent = 'Сохранить все'; btn.style.opacity = '1'; return; }
   for (const e of photoExpenses) {
     await sb.from('categories').upsert({ name: e.category.toLowerCase() }, { onConflict: 'name' });
-    if (e.original && e.original.toLowerCase() !== e.category.toLowerCase()) {
-      await sb.from('merchant_map').upsert({ merchant: e.original.toLowerCase(), category: e.category.toLowerCase() }, { onConflict: 'merchant' });
-    }
+    if (e.original && e.original.toLowerCase() !== e.category.toLowerCase()) await sb.from('merchant_map').upsert({ merchant: e.original.toLowerCase(), category: e.category.toLowerCase() }, { onConflict: 'merchant' });
   }
-
   cancelPhoto();
   toast(`Сохранено ${rows.length} трат ✓`);
   go('home');
@@ -797,34 +716,22 @@ function cancelPhoto() {
   if (btn) { btn.disabled = false; btn.textContent = 'Сохранить все'; btn.style.opacity = '1'; }
 }
 
-// ── STATS ──────────────────────────────────────────────
 async function loadStats() {
   const now = new Date();
   document.getElementById('stats-period').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
-
   const [{ data: curr }, { data: prev }] = await Promise.all([
     sb.from('expenses').select('*').gte('date', monthStart()),
     sb.from('prev_expenses').select('*')
   ]);
-
   const byCat = {}, prevByCat = {};
   (curr||[]).forEach(e => { byCat[e.category] = (byCat[e.category]||0) + e.amount; });
   (prev||[]).forEach(e => { prevByCat[e.category] = (prevByCat[e.category]||0) + e.amount; });
-
   const total = Object.values(byCat).reduce((s,v) => s+v, 0);
   const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
-
-  const COLORS = ['#22c55e','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
-
+  const COLORS = ['#2d7a4f','#1a5fa8','#b7770d','#c0392b','#6b3fa0','#1a8a8a','#8e3a7a','#5a7a2d'];
   const donutR = 52, cx = 64, cy = 64, circ = 2 * Math.PI * donutR;
   let offset = 0;
-  const segments = sorted.map(([ ,v], i) => {
-    const pct = v / total;
-    const seg = `<circle cx="${cx}" cy="${cy}" r="${donutR}" fill="none" stroke="${COLORS[i%COLORS.length]}" stroke-width="18" stroke-dasharray="${pct*circ} ${circ}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
-    offset += pct * circ;
-    return seg;
-  }).join('');
-
+  const segments = sorted.map(([,v], i) => { const pct = v / total; const seg = `<circle cx="${cx}" cy="${cy}" r="${donutR}" fill="none" stroke="${COLORS[i%COLORS.length]}" stroke-width="18" stroke-dasharray="${pct*circ} ${circ}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`; offset += pct * circ; return seg; }).join('');
   document.getElementById('stats-content').innerHTML = total ? `
     <div class="donut-wrap">
       <svg width="128" height="128" viewBox="0 0 128 128">
@@ -833,77 +740,35 @@ async function loadStats() {
         <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="11" fill="var(--text2)">всего</text>
         <text x="${cx}" y="${cy+10}" text-anchor="middle" font-size="13" font-weight="600" fill="var(--text)">${Math.round(total/1000)}к</text>
       </svg>
-      <div class="legend" style="flex:1">
-        ${sorted.slice(0,6).map(([c,v],i) => `
-          <div class="legend-item">
-            <div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>
-            <span>${c} — ${Math.round(v/total*100)}%</span>
-          </div>`).join('')}
-      </div>
+      <div class="legend" style="flex:1">${sorted.slice(0,6).map(([c,v],i) => `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div><span>${c} — ${Math.round(v/total*100)}%</span></div>`).join('')}</div>
     </div>
-
     <div class="section-title">По сравнению с прошлым месяцем</div>
     <div class="card">
-      ${sorted.map(([c,v]) => {
-        const p = prevByCat[c];
-        const diff = p ? Math.round((v-p)/p*100) : null;
-        const color = diff === null ? 'var(--text3)' : diff > 0 ? 'var(--red)' : 'var(--green)';
-        const arrow = diff === null ? 'новая' : diff > 0 ? `+${diff}% ↑` : `${diff}% ↓`;
-        return `<div class="expense-item">
-          <div class="exp-icon">${catEmoji(c)}</div>
-          <div><div class="exp-name">${c}</div><div class="exp-cat">${money(v)}</div></div>
-          <div style="margin-left:auto;font-size:13px;font-weight:600;color:${color}">${arrow}</div>
-        </div>`;
-      }).join('')}
+      ${sorted.map(([c,v]) => { const p = prevByCat[c]; const diff = p ? Math.round((v-p)/p*100) : null; const color = diff===null?'var(--text3)':diff>0?'var(--red)':'var(--green)'; const arrow = diff===null?'новая':diff>0?`+${diff}% ↑`:`${diff}% ↓`; return `<div class="expense-item"><div class="exp-icon" style="background:${catColor(c)}18;">${catEmoji(c)}</div><div><div class="exp-name">${c}</div><div class="exp-cat">${money(v)}</div></div><div style="margin-left:auto;font-size:13px;font-weight:600;color:${color}">${arrow}</div></div>`; }).join('')}
     </div>` : '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Нет данных за этот месяц</div></div>';
 }
 
-// ── BUDGET ─────────────────────────────────────────────
 async function loadBudget() {
-  const now = new Date();
   document.getElementById('budget-period').textContent = periodLabel();
-
   const [{ data: budget }, { data: expenses }] = await Promise.all([
     sb.from('budget').select('*'),
     sb.from('expenses').select('*').gte('date', periodStart())
   ]);
-
   const income = (budget||[]).find(b => b.key === '__income__')?.value || 0;
   const items = (budget||[]).filter(b => b.key !== '__income__' && b.key !== '__period__' && b.key !== '__from_savings__');
   const factByCat = {};
   (expenses||[]).forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
   const totalSpent = Object.values(factByCat).reduce((s,v)=>s+v,0);
-
   document.getElementById('budget-content').innerHTML = `
     ${items.length ? `
       <div class="card-grid">
-        <div class="metric">
-          <div class="metric-label">Доход</div>
-          <div class="metric-value">${money(income)}</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">Остаток</div>
-          <div class="metric-value" style="color:${income-totalSpent>=0?'var(--green)':'var(--red)'}">${money(income-totalSpent)}</div>
-        </div>
+        <div class="metric"><div class="metric-label">Получено</div><div class="metric-value">${money(income)}</div></div>
+        <div class="metric"><div class="metric-label">Остаток</div><div class="metric-value" style="color:${income-totalSpent>=0?'var(--green)':'var(--red)'}">${money(income-totalSpent)}</div></div>
       </div>
       <div class="section-title">По категориям</div>
-      <div class="card">
-        ${items.map(b => {
-          const spent = factByCat[b.key]||0;
-          const pct = b.value > 0 ? Math.round(spent/b.value*100) : 0;
-          const color = barColor(pct);
-          return `<div class="bar-row">
-            <div class="bar-header">
-              <span class="bar-cat">${b.key} ${pct>=100?'⚠️':''}</span>
-              <span class="bar-nums">${money(spent)} / ${money(b.value)}</span>
-            </div>
-            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
-          </div>`;
-        }).join('')}
-      </div>` : '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">Бюджет не настроен</div></div>'}
-    <button class="btn btn-secondary" onclick="openBudgetModal(${income}, ${JSON.stringify(items).replace(/"/g,'&quot;')})">
-      ${items.length ? '✏️ Изменить бюджет' : '+ Настроить бюджет'}
-    </button>`;
+      ${items.map(b => { const spent = factByCat[b.key]||0; const pct = b.value > 0 ? Math.round(spent/b.value*100) : 0; const col = barColor(pct); return `<div class="budget-bar-item"><div class="budget-bar-fill${pct>=100?' striped':''}" style="width:${Math.min(pct,100)}%;background:${col}"></div><div class="budget-bar-content"><div class="budget-bar-left"><span class="budget-bar-icon">${catEmoji(b.key)}</span><span class="budget-bar-name">${b.key}${pct>=100?' ⚠️':''}</span></div><div><div class="budget-bar-spent">${money(spent)}</div><div class="budget-bar-plan">из ${money(b.value)}</div></div></div></div>`; }).join('')}` :
+    '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">Бюджет не настроен</div></div>'}
+    <div style="margin:12px 0 0;"><button class="btn btn-secondary" onclick="openBudgetModal(${income}, ${JSON.stringify(items).replace(/"/g,'&quot;')})">${items.length ? '✏️ Изменить бюджет' : '+ Настроить бюджет'}</button></div>`;
 }
 
 async function openBudgetModal(income, items) {
@@ -911,26 +776,15 @@ async function openBudgetModal(income, items) {
   document.getElementById('budget-plan').value = items.map(b => `${b.key} ${Math.round(b.value)}`).join('\n');
   document.getElementById('budget-remainder-block').style.display = 'none';
   document.getElementById('budget-savings-block').style.display = 'none';
-
-  // Загружаем счета копилки
   const { data: accounts } = await sb.from('accounts').select('name');
   const sel = document.getElementById('budget-savings-account');
-  sel.innerHTML = '<option value="">— Не зачислять —</option>' +
-    (accounts||[]).map(a => `<option value="${a.name}">${a.name}</option>`).join('');
-
+  sel.innerHTML = '<option value="">— Не зачислять —</option>' + (accounts||[]).map(a => `<option value="${a.name}">${a.name}</option>`).join('');
   openModal('budget');
-
-  // Обновляем остаток при изменении полей
   const updateRemainder = () => {
     const inc = parseFloat(document.getElementById('budget-income').value) || 0;
     const lines = document.getElementById('budget-plan').value.trim().split('\n');
     let total = 0;
-    for (const line of lines) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length < 2) continue;
-      const amt = parseFloat(parts[parts.length-1]);
-      if (amt > 0) total += amt;
-    }
+    for (const line of lines) { const parts = line.trim().split(/\s+/); if (parts.length < 2) continue; const amt = parseFloat(parts[parts.length-1]); if (amt > 0) total += amt; }
     const rem = inc - total;
     if (inc > 0) {
       document.getElementById('budget-remainder-val').textContent = money(rem);
@@ -948,102 +802,49 @@ async function saveBudget() {
   const income = parseFloat(document.getElementById('budget-income').value);
   const lines = document.getElementById('budget-plan').value.trim().split('\n');
   if (!income) { toast('Введи сумму', 'error'); return; }
-
   const saveBtn = document.querySelector('#modal-budget .btn-primary');
   if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '0.5'; saveBtn.textContent = 'Сохранение...'; }
-
   const rows = [{ key: '__income__', value: income }, { key: '__period__', value: new Date(periodStart()).getTime() }];
   let totalPlan = 0;
-  for (const line of lines) {
-    const parts = line.trim().split(/\s+/);
-    if (parts.length < 2) continue;
-    const amount = parseFloat(parts[parts.length - 1]);
-    const cat = parts.slice(0, -1).join(' ').toLowerCase();
-    if (cat && amount) { rows.push({ key: cat, value: amount }); totalPlan += amount; }
-  }
-
+  for (const line of lines) { const parts = line.trim().split(/\s+/); if (parts.length < 2) continue; const amount = parseFloat(parts[parts.length-1]); const cat = parts.slice(0,-1).join(' ').toLowerCase(); if (cat && amount) { rows.push({ key: cat, value: amount }); totalPlan += amount; } }
   await sb.from('budget').delete().neq('key', '___');
   const { error } = await sb.from('budget').upsert(rows, { onConflict: 'key' });
-  if (error) { toast('Ошибка сохранения', 'error'); console.error(error); return; }
-
-  // Зачисляем остаток в копилку если выбрана
+  if (error) { toast('Ошибка сохранения', 'error'); if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.textContent = 'Сохранить'; } return; }
   const remainder = income - totalPlan;
   const savingsAccount = document.getElementById('budget-savings-account').value;
   if (savingsAccount && remainder > 0) {
     const { data: acc } = await sb.from('accounts').select('balance').eq('name', savingsAccount).single();
-    if (acc) {
-      await sb.from('accounts').update({ balance: acc.balance + remainder }).eq('name', savingsAccount);
-      toast(`Бюджет сохранён, ${money(remainder)} → ${savingsAccount} ✓`);
-    }
-  } else {
-    toast('Бюджет сохранён ✓');
-  }
-
-  const saveBtnEl = document.querySelector('#modal-budget .btn-primary');
-  if (saveBtnEl) { saveBtnEl.disabled = false; saveBtnEl.style.opacity = '1'; saveBtnEl.textContent = 'Сохранить'; }
+    if (acc) { await sb.from('accounts').update({ balance: acc.balance + remainder }).eq('name', savingsAccount); toast(`Бюджет сохранён, ${money(remainder)} → ${savingsAccount} ✓`); }
+  } else { toast('Бюджет сохранён ✓'); }
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.textContent = 'Сохранить'; }
   closeModal('budget');
   loadBudget();
 }
 
-// ── КУРС ВАЛЮТ ─────────────────────────────────────────
 const RATES_API = 'https://www.cbr-xml-daily.ru/daily_json.js';
-
 async function loadLimits() {
-  document.getElementById('limits-content').innerHTML =
-    '<div class="loader"><div class="spin"></div>Загружаю курсы...</div>';
-
+  document.getElementById('limits-content').innerHTML = '<div class="loader"><div class="spin"></div>Загружаю курсы...</div>';
   try {
     const res = await fetch(RATES_API);
     const data = await res.json();
-
     const currencies = [
-      { code: 'USD', name: 'Доллар США', flag: '🇺🇸' },
-      { code: 'EUR', name: 'Евро', flag: '🇪🇺' },
-      { code: 'TRY', name: 'Турецкая лира', flag: '🇹🇷' },
-      { code: 'GBP', name: 'Фунт стерлингов', flag: '🇬🇧' },
-      { code: 'CNY', name: 'Китайский юань', flag: '🇨🇳' },
-      { code: 'AED', name: 'Дирхам ОАЭ', flag: '🇦🇪' },
+      { code:'USD', name:'Доллар США', flag:'🇺🇸' }, { code:'EUR', name:'Евро', flag:'🇪🇺' },
+      { code:'TRY', name:'Турецкая лира', flag:'🇹🇷' }, { code:'GBP', name:'Фунт стерлингов', flag:'🇬🇧' },
+      { code:'CNY', name:'Китайский юань', flag:'🇨🇳' }, { code:'AED', name:'Дирхам ОАЭ', flag:'🇦🇪' },
     ];
-
-    const updated = new Date(data.Date).toLocaleString('ru-RU', {
-      day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-    });
+    const updated = new Date(data.Date).toLocaleString('ru-RU', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
     document.getElementById('rates-updated').textContent = 'ЦБ РФ · ' + updated;
-
-    document.getElementById('limits-content').innerHTML =
-      '<div class="card">' +
-      currencies.map(cur => {
-        const val = data.Valute[cur.code];
-        if (!val) return '';
-        const rate = (val.Value / val.Nominal).toFixed(2);
-        const prev = (val.Previous / val.Nominal).toFixed(2);
-        const diff = (val.Value / val.Nominal - val.Previous / val.Nominal).toFixed(2);
-        const isUp = diff > 0;
-        const diffColor = isUp ? 'var(--red)' : 'var(--green)';
-        const diffSign = isUp ? '+' : '';
-        return '<div class="expense-item">' +
-          '<div class="exp-icon" style="font-size:22px;background:none;">' + cur.flag + '</div>' +
-          '<div><div class="exp-name">' + cur.code + '</div><div class="exp-cat">' + cur.name + '</div></div>' +
-          '<div style="text-align:right;margin-left:auto;">' +
-            '<div style="font-size:18px;font-weight:600;">' + rate + ' ₽</div>' +
-            '<div style="font-size:12px;color:' + diffColor + ';">' + diffSign + diff + ' ₽</div>' +
-          '</div>' +
-        '</div>';
-      }).join('') +
-      '</div>';
-
+    document.getElementById('limits-content').innerHTML = '<div class="card">' +
+      currencies.map(cur => { const val = data.Valute[cur.code]; if (!val) return ''; const rate = (val.Value/val.Nominal).toFixed(2); const diff = (val.Value/val.Nominal - val.Previous/val.Nominal).toFixed(2); const isUp = diff > 0; return '<div class="expense-item"><div class="exp-icon" style="font-size:22px;background:none;">' + cur.flag + '</div><div><div class="exp-name">' + cur.code + '</div><div class="exp-cat">' + cur.name + '</div></div><div style="text-align:right;margin-left:auto;"><div style="font-size:18px;font-weight:600;">' + rate + ' ₽</div><div style="font-size:12px;color:' + (isUp?'var(--red)':'var(--green)') + ';">' + (isUp?'+':'') + diff + ' ₽</div></div></div>'; }).join('') + '</div>';
   } catch(e) {
-    document.getElementById('limits-content').innerHTML =
-      '<div class="empty"><div class="empty-icon">📡</div><div class="empty-text">Не удалось загрузить курсы</div></div>';
+    document.getElementById('limits-content').innerHTML = '<div class="empty"><div class="empty-icon">📡</div><div class="empty-text">Не удалось загрузить курсы</div></div>';
   }
 }
 
-// ── SAVINGS ────────────────────────────────────────────
 async function loadSavings() {
   const { data: accounts } = await sb.from('accounts').select('*');
-
-  document.getElementById('savings-content').innerHTML = `
-    ${accounts?.length ? accounts.map(a => `
+  document.getElementById('savings-content').innerHTML =
+    (accounts?.length ? accounts.map(a => `
       <div class="savings-card">
         <div class="savings-name">${a.name}</div>
         <div class="savings-amount">${money(a.balance)}</div>
@@ -1052,16 +853,13 @@ async function loadSavings() {
           <button class="btn-sm" onclick="savingsAction('remove','${a.name}')">− Снять</button>
           <button class="btn-sm" onclick="savingsAction('edit','${a.name}',${a.balance})">✏️</button>
         </div>
-      </div>`).join('') : '<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Счетов пока нет</div></div>'}
-    <button class="btn btn-primary" onclick="newSavings()" style="margin-top:8px">+ Новый счёт</button>`;
+      </div>`).join('') : '<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Счетов пока нет</div></div>') +
+    '<button class="btn btn-primary" onclick="newSavings()" style="margin-top:8px">+ Новый счёт</button>';
 }
 
 function newSavings() {
   document.getElementById('modal-savings-title').textContent = 'Новый счёт';
-  document.getElementById('modal-savings-body').innerHTML = `
-    <div class="form-group"><label class="form-label">Название</label><input class="form-input" id="sav-name" placeholder="Отпуск"></div>
-    <div class="form-group"><label class="form-label">Начальный баланс (₽)</label><input class="form-input" id="sav-bal" type="number" inputmode="decimal" placeholder="0"></div>
-    <button class="btn btn-primary" onclick="createSavings()">Создать</button>`;
+  document.getElementById('modal-savings-body').innerHTML = `<div class="form-group"><label class="form-label">Название</label><input class="form-input" id="sav-name" placeholder="Отпуск"></div><div class="form-group"><label class="form-label">Начальный баланс (₽)</label><input class="form-input" id="sav-bal" type="number" inputmode="decimal" placeholder="0"></div><button class="btn btn-primary" onclick="createSavings()">Создать</button>`;
   openModal('savings');
 }
 
@@ -1071,198 +869,87 @@ async function createSavings() {
   if (!name) { toast('Введи название', 'error'); return; }
   const { error } = await sb.from('accounts').upsert({ name, balance }, { onConflict: 'name' });
   if (error) { toast('Ошибка', 'error'); return; }
-  closeModal('savings');
-  toast('Счёт создан ✓');
-  loadSavings();
+  closeModal('savings'); toast('Счёт создан ✓'); loadSavings();
 }
 
 function savingsAction(type, name, currentBalance) {
-  const titles = { add: `Пополнить «${name}»`, remove: `Снять с «${name}»`, edit: `Редактировать «${name}»` };
+  const titles = { add:`Пополнить «${name}»`, remove:`Снять с «${name}»`, edit:`Редактировать «${name}»` };
   document.getElementById('modal-savings-title').textContent = titles[type];
-
   const hint = type === 'remove' ? '<div class="form-hint" style="margin-top:6px;">Снятая сумма добавится к остатку бюджета</div>' : '';
-
   if (type === 'edit') {
-    document.getElementById('modal-savings-body').innerHTML = `
-      <div class="form-group">
-        <label class="form-label">Новый баланс (₽)</label>
-        <input class="form-input" id="sav-amount" type="number" inputmode="decimal" value="${currentBalance}">
-        <div class="form-hint" style="margin-top:6px;">Введи точную сумму которая сейчас на счёте</div>
-      </div>
-      <button class="btn btn-primary" onclick="updateSavings('${name}', 'edit')">Сохранить</button>`;
+    document.getElementById('modal-savings-body').innerHTML = `<div class="form-group"><label class="form-label">Новый баланс (₽)</label><input class="form-input" id="sav-amount" type="number" inputmode="decimal" value="${currentBalance}"><div class="form-hint" style="margin-top:6px;">Введи точную сумму которая сейчас на счёте</div></div><button class="btn btn-primary" onclick="updateSavings('${name}','edit')">Сохранить</button>`;
   } else {
-    document.getElementById('modal-savings-body').innerHTML = `
-      <div class="form-group">
-        <label class="form-label">Сумма (₽)</label>
-        <input class="form-input" id="sav-amount" type="number" inputmode="decimal" placeholder="0">
-        ${hint}
-      </div>
-      <button class="btn btn-primary" onclick="updateSavings('${name}', '${type}')">Подтвердить</button>`;
+    document.getElementById('modal-savings-body').innerHTML = `<div class="form-group"><label class="form-label">Сумма (₽)</label><input class="form-input" id="sav-amount" type="number" inputmode="decimal" placeholder="0">${hint}</div><button class="btn btn-primary" onclick="updateSavings('${name}','${type}')">Подтвердить</button>`;
   }
   openModal('savings');
 }
 
 async function updateSavings(name, type) {
   const val = parseFloat(document.getElementById('sav-amount').value);
-  if (isNaN(val) || val === null || val === undefined || document.getElementById('sav-amount').value === '') {
-    toast('Введи сумму', 'error'); return;
-  }
-
-  // Блокируем кнопку от двойного нажатия
+  if (isNaN(val) || document.getElementById('sav-amount').value === '') { toast('Введи сумму', 'error'); return; }
   const btns = document.querySelectorAll('#modal-savings-body .btn');
   btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
-
   try {
-    if (type === 'edit') {
-      await sb.from('accounts').update({ balance: val }).eq('name', name);
-      toast(`Баланс «${name}» обновлён ✓`);
-      closeModal('savings');
-      loadSavings();
-      return;
-    }
-
+    if (type === 'edit') { await sb.from('accounts').update({ balance: val }).eq('name', name); toast(`Баланс «${name}» обновлён ✓`); closeModal('savings'); loadSavings(); return; }
     const amount = val;
     const { data } = await sb.from('accounts').select('balance').eq('name', name).single();
     const newBal = type === 'add' ? data.balance + amount : data.balance - amount;
     await sb.from('accounts').update({ balance: newBal }).eq('name', name);
-
     if (type === 'remove') {
-      const { data: existing } = await sb.from('budget').select('key, value').eq('key', '__from_savings__').maybeSingle();
-      if (!existing) {
-        await sb.from('budget').insert({ key: '__from_savings__', value: amount });
-      } else {
-        await sb.from('budget').update({ value: existing.value + amount }).eq('key', '__from_savings__');
-      }
+      const { data: existing } = await sb.from('budget').select('key,value').eq('key', '__from_savings__').maybeSingle();
+      if (!existing) await sb.from('budget').insert({ key: '__from_savings__', value: amount });
+      else await sb.from('budget').update({ value: existing.value + amount }).eq('key', '__from_savings__');
       toast(`-${money(amount)} снято, остаток бюджета увеличен ✓`);
-    } else {
-      toast(`+${money(amount)} добавлено ✓`);
-    }
-
-    closeModal('savings');
-    loadSavings();
+    } else { toast(`+${money(amount)} добавлено ✓`); }
+    closeModal('savings'); loadSavings();
     if (type === 'remove') { loadHome(); loadBudget(); }
-  } catch(e) {
-    btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
-    toast('Ошибка, попробуй ещё раз', 'error');
-  }
+  } catch(e) { btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; }); toast('Ошибка, попробуй ещё раз', 'error'); }
 }
 
-// ── СПИСОК ПОКУПОК ─────────────────────────────────────
-async function openShoppingList() {
-  openModal('shopping');
-  await loadShopList();
-  setTimeout(() => document.getElementById('shop-name')?.focus(), 300);
-}
+async function openShoppingList() { openModal('shopping'); await loadShopList(); setTimeout(() => document.getElementById('shop-name')?.focus(), 300); }
 
 async function loadShopList() {
   const { data } = await sb.from('shopping_list').select('*').order('done').order('created_at');
   const items = data || [];
-
-  if (!items.length) {
-    document.getElementById('shop-list').innerHTML =
-      '<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:14px;">Список пуст</div>';
-    return;
-  }
-
+  if (!items.length) { document.getElementById('shop-list').innerHTML = '<div style="padding:20px 0;text-align:center;color:var(--text3);font-size:14px;">Список пуст</div>'; return; }
   document.getElementById('shop-list').innerHTML = items.map(item => `
     <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:0.5px solid var(--border);">
-      <div onclick="toggleShopItem('${item.id}', ${item.done})"
-        style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${item.done ? 'var(--green)' : 'var(--text3)'};
-        background:${item.done ? 'var(--green)' : 'transparent'};cursor:pointer;flex-shrink:0;
-        display:flex;align-items:center;justify-content:center;transition:all .15s;">
-        ${item.done ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+      <div onclick="toggleShopItem('${item.id}',${item.done})" style="width:24px;height:24px;border-radius:50%;border:1.5px solid ${item.done?'var(--green)':'var(--text3)'};background:${item.done?'var(--green)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        ${item.done?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':''}
       </div>
-      <div style="flex:1;font-size:16px;${item.done ? 'opacity:0.35;text-decoration:line-through;' : ''}">${item.name}</div>
+      <div style="flex:1;font-size:16px;${item.done?'opacity:0.35;text-decoration:line-through;':''}">${item.name}</div>
     </div>`).join('');
 }
 
-async function addShopItem() {
-  const name = document.getElementById('shop-name').value.trim();
-  if (!name) return;
-  await sb.from('shopping_list').insert({ name });
-  document.getElementById('shop-name').value = '';
-  await loadShopList();
-  document.getElementById('shop-name').focus();
-}
+async function addShopItem() { const name = document.getElementById('shop-name').value.trim(); if (!name) return; await sb.from('shopping_list').insert({ name }); document.getElementById('shop-name').value = ''; await loadShopList(); document.getElementById('shop-name').focus(); }
+async function toggleShopItem(id, done) { await sb.from('shopping_list').update({ done: !done }).eq('id', id); await loadShopList(); }
+async function deleteShopItem(id) { await sb.from('shopping_list').delete().eq('id', id); await loadShopList(); }
+async function clearDoneItems() { await sb.from('shopping_list').delete().eq('done', true); await loadShopList(); toast('Отмеченные удалены ✓'); }
 
-async function toggleShopItem(id, done) {
-  await sb.from('shopping_list').update({ done: !done }).eq('id', id);
-  await loadShopList();
-}
-
-async function deleteShopItem(id) {
-  await sb.from('shopping_list').delete().eq('id', id);
-  await loadShopList();
-}
-
-async function clearDoneItems() {
-  await sb.from('shopping_list').delete().eq('done', true);
-  await loadShopList();
-  toast('Отмеченные удалены ✓');
-}
-
-// ── ИСТОРИЯ ────────────────────────────────────────────
-let historyMonth = new Date().getMonth();
-let historyYear = new Date().getFullYear();
-
-function openHistory() {
-  historyMonth = new Date().getMonth();
-  historyYear = new Date().getFullYear();
-  openModal('history');
-  loadHistoryMonth();
-}
-
-function changeHistoryMonth(dir) {
-  historyMonth += dir;
-  if (historyMonth > 11) { historyMonth = 0; historyYear++; }
-  if (historyMonth < 0) { historyMonth = 11; historyYear--; }
-  loadHistoryMonth();
-}
+let historyMonth = new Date().getMonth(), historyYear = new Date().getFullYear();
+function openHistory() { historyMonth = new Date().getMonth(); historyYear = new Date().getFullYear(); openModal('history'); loadHistoryMonth(); }
+function changeHistoryMonth(dir) { historyMonth += dir; if (historyMonth > 11) { historyMonth = 0; historyYear++; } if (historyMonth < 0) { historyMonth = 11; historyYear--; } loadHistoryMonth(); }
 
 async function loadHistoryMonth() {
   document.getElementById('history-title').textContent = months[historyMonth] + ' ' + historyYear;
-  document.getElementById('history-content').innerHTML =
-    '<div class="loader"><div class="spin"></div>Загрузка...</div>';
-
+  document.getElementById('history-content').innerHTML = '<div class="loader"><div class="spin"></div>Загрузка...</div>';
   const from = new Date(historyYear, historyMonth, 1).toISOString();
   const to = new Date(historyYear, historyMonth + 1, 0, 23, 59, 59).toISOString();
-
-  const { data: expenses } = await sb.from('expenses').select('*')
-    .gte('date', from).lte('date', to);
-
+  const { data: expenses } = await sb.from('expenses').select('*').gte('date', from).lte('date', to);
   const items = expenses || [];
-  if (!items.length) {
-    document.getElementById('history-content').innerHTML =
-      '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных за этот месяц</div></div>';
-    return;
-  }
-
+  if (!items.length) { document.getElementById('history-content').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных за этот месяц</div></div>'; return; }
   const byCat = {};
-  items.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
-  const sorted = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  const total = items.reduce((s, e) => s + e.amount, 0);
+  items.forEach(e => { byCat[e.category] = (byCat[e.category]||0) + e.amount; });
+  const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+  const total = items.reduce((s,e) => s+e.amount, 0);
   const maxAmt = sorted[0][1];
-
   document.getElementById('history-content').innerHTML =
-    '<div style="display:flex;justify-content:space-between;margin-bottom:14px;">' +
-      '<div style="font-size:13px;color:var(--text2);">Всего потрачено</div>' +
-      '<div style="font-size:16px;font-weight:600;color:var(--red);">' + money(total) + '</div>' +
-    '</div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:14px;"><div style="font-size:13px;color:var(--text2);">Всего потрачено</div><div style="font-size:16px;font-weight:600;color:var(--red);">' + money(total) + '</div></div>' +
     '<div class="card">' +
-    sorted.map(([cat, amt]) => {
-      const pct = Math.round(amt / maxAmt * 100);
-      return '<div class="bar-row">' +
-        '<div class="bar-header">' +
-          '<span class="bar-cat">' + catEmoji(cat) + ' ' + cat + '</span>' +
-          '<span class="bar-nums">' + money(amt) + ' · ' + Math.round(amt/total*100) + '%</span>' +
-        '</div>' +
-        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:#3b82f6"></div></div>' +
-      '</div>';
-    }).join('') +
+    sorted.map(([cat, amt]) => { const pct = Math.round(amt/maxAmt*100); return '<div class="bar-row"><div class="bar-header"><span class="bar-cat">' + catEmoji(cat) + ' ' + cat + '</span><span class="bar-nums">' + money(amt) + ' · ' + Math.round(amt/total*100) + '%</span></div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + catColor(cat) + '"></div></div></div>'; }).join('') +
     '</div>';
 }
 
-// ── INIT ───────────────────────────────────────────────
 loadHome();
 loadAdd();
 </script>
