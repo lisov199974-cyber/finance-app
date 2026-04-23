@@ -527,6 +527,23 @@ async function confirmUndo(id) {
   loadHome();
 }
 
+function daysLeft() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  const salary = getPayday(y, m, 12);
+  const advance = getPayday(y, m, 27);
+  let end;
+  if (d >= advance.getDate()) {
+    end = getPayday(y, m + 1, 12);
+  } else if (d >= salary.getDate()) {
+    end = advance;
+  } else {
+    end = salary;
+  }
+  const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+  return diff + ' дн';
+}
+
 async function loadHome() {
   document.getElementById('home-month').textContent = periodLabel();
   const [{ data: expenses }, { data: budget }] = await Promise.all([
@@ -557,7 +574,7 @@ async function loadHome() {
       '<div class="hero-sub">' + (remaining < 0 ? '⚠️ Перерасход' : totalPlan ? 'из плана ' + money(totalPlan) : 'Бюджет не задан') + '</div>' +
       '<div class="hero-row">' +
         '<div class="hero-pill"><div class="hero-pill-label">Потрачено</div><div class="hero-pill-val" style="color:#ff8a80">' + money(totalSpent) + '</div></div>' +
-        '<div class="hero-pill"><div class="hero-pill-label">Период</div><div class="hero-pill-val" style="font-size:12px">' + periodLabel() + '</div></div>' +
+        '<div class="hero-pill"><div class="hero-pill-label">Дней осталось</div><div class="hero-pill-val">' + daysLeft() + '</div></div>' +
       '</div>' +
     '</div>' +
 
