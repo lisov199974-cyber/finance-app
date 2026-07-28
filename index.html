@@ -677,6 +677,11 @@ async function checkLimit(category) {
 
 let photoExpenses = [];
 
+// ============================================================
+// ЗАМЕНИ функцию handlePhoto (строки ~680-710) на эту версию.
+// Она устойчива к любому формату ответа и показывает, что именно
+// вернул воркер, если распознать не удалось.
+// ============================================================
 async function handlePhoto(input) {
   if (!input.files[0]) return;
   document.getElementById('photo-result').style.display = 'none';
@@ -689,24 +694,90 @@ async function handlePhoto(input) {
     document.getElementById('screenshot-img').src = e.target.result;
     document.getElementById('photo-preview-img').style.display = 'block';
     try {
-      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ image: base64, mediaType: file.type }) });
-      let text = await res.text();
-      text = text.replace(/```json|```/g, '').trim();
-      photoExpenses = JSON.parse(text);
+      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mediaType: file.type })
+      });
+      const raw = await res.text();
+      console.log('OCR ответ воркера:', raw);          // смотри это в консоли (F12)
+      const parsed = parseExpenses(raw);
+
+      // Ничего не распознали — показываем сырой ответ, чтобы понять причину
+      if (!parsed.length) {
+        document.getElementById('photo-loading').style.display = 'none';
+        document.getElementById('upload-area').style.display = 'block';
+        document.getElementById('photo-preview-img').style.display = 'none';
+        toast('Не распознано. Воркер вернул: ' + raw.slice(0, 120), 'error');
+        return;
+      }
+
       const { data: merchants } = await sb.from('merchant_map').select('*');
-      const mMap = {}; (merchants||[]).forEach(m => mMap[m.merchant.toLowerCase()] = m.category);
-      photoExpenses = photoExpenses.map(e => { const key = e.category.toLowerCase(); return { ...e, original: e.category, category: mMap[key] || e.category }; });
-      document.getElementById('preview-items').innerHTML = photoExpenses.map((e, i) => `<div class="preview-item"><input value="${e.category}" onchange="photoExpenses[${i}].category=this.value" style="flex:1;text-align:left"><input value="${Math.round(e.amount)}" onchange="photoExpenses[${i}].amount=parseFloat(this.value)||0" type="number"></div>`).join('');
+      const mMap = {};
+      (merchants || []).forEach(m => mMap[m.merchant.toLowerCase()] = m.category);
+
+      photoExpenses = parsed.map(e => {
+        const cat = String(e.category || e.name || e.merchant || 'прочее');
+        return {
+          amount: parseFloat(e.amount) || 0,
+          original: cat,
+          category: mMap[cat.toLowerCase()] || cat
+        };
+      }).filter(e => e.amount > 0);
+
+      if (!photoExpenses.length) {
+        document.getElementById('photo-loading').style.display = 'none';
+        document.getElementById('upload-area').style.display = 'block';
+        toast('Суммы не найдены в ответе', 'error');
+        return;
+      }
+
+      document.getElementById('preview-items').innerHTML = photoExpenses.map((e, i) =>
+        '<div class="preview-item">' +
+          '<input value="' + e.category + '" onchange="photoExpenses[' + i + '].category=this.value" style="flex:1;text-align:left">' +
+          '<input value="' + Math.round(e.amount) + '" onchange="photoExpenses[' + i + '].amount=parseFloat(this.value)||0" type="number">' +
+        '</div>'
+      ).join('');
       document.getElementById('photo-loading').style.display = 'none';
       document.getElementById('photo-result').style.display = 'block';
-    } catch(err) {
+    } catch (err) {
+      console.error('OCR ошибка:', err);
       document.getElementById('photo-loading').style.display = 'none';
       document.getElementById('upload-area').style.display = 'block';
       document.getElementById('photo-preview-img').style.display = 'none';
-      toast('Ошибка распознавания. Попробуй ещё раз.', 'error');
+      toast('Ошибка: ' + err.message, 'error');
     }
   };
   reader.readAsDataURL(file);
+}
+
+// ============================================================
+// ДОБАВЬ эту новую функцию сразу после handlePhoto.
+// Достаёт массив трат из ответа в любом разумном формате:
+// голый массив, объект {expenses:[...]}, или сырой ответ Anthropic.
+// ============================================================
+function parseExpenses(raw) {
+  if (!raw) return [];
+  let t = raw.replace(/```json|```/g, '').trim();
+  let data = null;
+  try {
+    data = JSON.parse(t);
+  } catch (_) {
+    // если вокруг JSON есть лишний текст — выдёргиваем массив регуляркой
+    const m = t.match(/\[[\s\S]*\]/);
+    if (m) { try { data = JSON.parse(m[0]); } catch (_) {} }
+  }
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.expenses)) return data.expenses;
+    if (Array.isArray(data.transactions)) return data.transactions;
+    if (Array.isArray(data.items)) return data.items;
+    // на случай если воркер отдаёт сырой ответ Anthropic {content:[{text:"..."}]}
+    if (Array.isArray(data.content) && data.content[0] && data.content[0].text)
+      return parseExpenses(data.content[0].text);
+    if (data.amount != null) return [data];
+  }
+  return [];
 }
 
 async function savePhotoExpenses() {
