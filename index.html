@@ -71,6 +71,7 @@
   /* BUDGET BARS */
   .budget-bar-item { margin: 0 16px 8px; border-radius: 14px; overflow: hidden; position: relative; height: 52px; background: #1e1e28; }
   .budget-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 14px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .budget-bar-fill.planned { opacity: 0.18; border-radius: 0 14px 14px 0; background-image: repeating-linear-gradient(-45deg,transparent,transparent 5px,rgba(0,0,0,0.35) 5px,rgba(0,0,0,0.35) 10px); }
   .budget-bar-fill.striped { background-image: repeating-linear-gradient(-45deg,transparent,transparent 6px,rgba(255,255,255,0.25) 6px,rgba(255,255,255,0.25) 12px); }
   .budget-bar-content { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; }
   .budget-bar-left { display: flex; align-items: center; gap: 8px; }
@@ -629,11 +630,39 @@ async function loadHome() {
   const upcoming = visibleExpenses.filter(isFuture).sort((a,b) => a.date.localeCompare(b.date));
   const upcomingSum = upcoming.reduce((s,e) => s + e.amount, 0);
   const recent = visibleExpenses.filter(e => !isFuture(e)).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 10);
-  const factByCat = {};
-  visibleExpenses.forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
+  // Реально списанное и запланированное (подписки с будущей датой) считаем раздельно
+  const paidByCat = {}, planByCat = {}, nextByCat = {};
+  visibleExpenses.forEach(e => {
+    if (isFuture(e)) {
+      planByCat[e.category] = (planByCat[e.category]||0) + e.amount;
+      if (!nextByCat[e.category] || e.date < nextByCat[e.category]) nextByCat[e.category] = e.date;
+    } else paidByCat[e.category] = (paidByCat[e.category]||0) + e.amount;
+  });
+  const totalPaid = Object.values(paidByCat).reduce((s,v) => s + v, 0);
   const remaining = totalPlan > 0 ? totalPlan - totalSpent : 0;
-  const unplanned = Object.entries(factByCat).filter(([cat]) => !budgetItems.find(b => b.key === cat));
+  // Если план задан не на этот период — не сверяемся со старыми категориями
+  const activeBudget = budgetIsCurrentPeriod ? budgetItems : [];
+  const allCats = [...new Set([...Object.keys(paidByCat), ...Object.keys(planByCat)])];
+  const unplanned = allCats.filter(cat => !activeBudget.find(b => b.key === cat))
+    .map(cat => [cat, (paidByCat[cat]||0) + (planByCat[cat]||0)]);
   const unplannedSum = unplanned.reduce((s, [, v]) => s + v, 0);
+
+  // Бар: сплошная часть — уже потрачено, полосатая бледная — ещё спишется
+  const twoBar = (cat, base, color, limit) => {
+    const paid = paidByCat[cat] || 0, plan = planByCat[cat] || 0;
+    const pPct = base > 0 ? Math.min(paid / base * 100, 100) : 0;
+    const fPct = base > 0 ? Math.min(plan / base * 100, 100 - pPct) : 0;
+    const over = limit != null && paid + plan > limit;
+    const sub = (plan > 0 ? '+' + money(plan) + ' спишется ' + shortDate(nextByCat[cat]) : '') +
+      (limit != null ? (plan > 0 ? ' · ' : '') + 'из ' + money(limit) : '');
+    return '<div class="budget-bar-item">' +
+      '<div class="budget-bar-fill' + (over ? ' striped' : '') + '" style="width:' + pPct + '%;background:' + color + '"></div>' +
+      (fPct > 0 ? '<div class="budget-bar-fill planned" style="left:' + pPct + '%;width:' + fPct + '%;background-color:' + color + '"></div>' : '') +
+      '<div class="budget-bar-content">' +
+        '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(cat) + '</span><span class="budget-bar-name">' + escHtml(cat) + (over ? ' ⚠️' : '') + '</span></div>' +
+        '<div><div class="budget-bar-spent">' + money(paid) + '</div>' + (sub ? '<div class="budget-bar-plan">' + sub + '</div>' : '') + '</div>' +
+      '</div></div>';
+  };
 
   const expRow = e =>
     '<div class="expense-item tap' + (isFuture(e) ? ' future' : '') + '" onclick="openExpense(\'' + e.id + '\')">' +
@@ -650,37 +679,24 @@ async function loadHome() {
       '<div class="hero-amount" style="color:' + (remaining < 0 ? '#ff8a80' : '#fff') + '">' + money(Math.abs(remaining)) + '</div>' +
       '<div class="hero-sub">' + (remaining < 0 ? '⚠️ Перерасход' : totalPlan ? 'из плана ' + money(totalPlan) : 'Бюджет не задан') + '</div>' +
       '<div class="hero-row">' +
-        '<div class="hero-pill"><div class="hero-pill-label">Потрачено</div><div class="hero-pill-val" style="color:#ff8a80">' + money(totalSpent) + '</div></div>' +
+        '<div class="hero-pill"><div class="hero-pill-label">Потрачено</div><div class="hero-pill-val" style="color:#ff8a80">' + money(totalPaid) + '</div></div>' +
         '<div class="hero-pill"><div class="hero-pill-label">Дней осталось</div><div class="hero-pill-val">' + daysLeft() + '</div></div>' +
       '</div>' +
-      (upcomingSum > 0 ? '<div class="hero-sub" style="margin-top:10px;">🔁 в т.ч. подписки, которые ещё спишутся: ' + money(upcomingSum) + '</div>' : '') +
+      (upcomingSum > 0 ? '<div class="hero-sub" style="margin-top:10px;">🔁 ещё спишутся подписки: ' + money(upcomingSum) + ' — уже вычтены из остатка</div>' : '') +
     '</div>' +
 
-    (budgetItems.length && budgetIsCurrentPeriod ?
+    (activeBudget.length ?
       '<div class="section-title">По категориям</div>' +
-      budgetItems.map(b => {
-        const spent = factByCat[b.key] || 0;
-        const pct = Math.min(Math.round(spent / b.value * 100), 100);
-        const col = barColor(pct); const isOver = spent > b.value;
-        return '<div class="budget-bar-item">' +
-          '<div class="budget-bar-fill' + (isOver ? ' striped' : '') + '" style="width:' + pct + '%;background:' + col + '"></div>' +
-          '<div class="budget-bar-content">' +
-            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(b.key) + '</span><span class="budget-bar-name">' + escHtml(b.key) + (isOver ? ' ⚠️' : '') + '</span></div>' +
-            '<div><div class="budget-bar-spent">' + money(spent) + '</div><div class="budget-bar-plan">из ' + money(b.value) + '</div></div>' +
-          '</div></div>';
+      activeBudget.map(b => {
+        const tot = (paidByCat[b.key]||0) + (planByCat[b.key]||0);
+        return twoBar(b.key, b.value, barColor(Math.round(tot / b.value * 100)), b.value);
       }).join('') : '') +
 
     (unplanned.length ?
       '<div class="section-title">Внеплановые · ' + money(unplannedSum) + (totalPlan ? ' — не заложены в план' : '') + '</div>' +
-      unplanned.sort((a,b) => b[1]-a[1]).map(([cat, amt]) => {
+      unplanned.sort((a,b) => b[1]-a[1]).map(([cat]) => {
         const maxU = Math.max(...unplanned.map(([,v]) => v));
-        const pct = Math.round(amt / maxU * 100);
-        return '<div class="budget-bar-item">' +
-          '<div class="budget-bar-fill" style="width:' + pct + '%;background:' + catColor(cat) + ';opacity:0.7"></div>' +
-          '<div class="budget-bar-content">' +
-            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(cat) + '</span><span class="budget-bar-name">' + escHtml(cat) + '</span></div>' +
-            '<div class="budget-bar-spent">' + money(amt) + '</div>' +
-          '</div></div>';
+        return twoBar(cat, maxU, catColor(cat), null);
       }).join('') : '') +
 
     (upcoming.length ?
