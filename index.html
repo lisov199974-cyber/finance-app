@@ -178,6 +178,27 @@
   /* TOP ACTION BUTTONS */
   .top-action { background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--text2); cursor: pointer; transition: all .15s; }
   .top-action:hover { background: rgba(255,255,255,0.1); }
+
+  /* NEW: подписки, категории, правка трат */
+  .nav-btn { font-size: 9.5px; }
+  .chip.more { color: var(--accent); border-color: rgba(48,209,88,0.35); }
+  .chip.suggest { color: var(--amber); border-color: rgba(255,214,10,0.35); }
+  .expense-item.tap { cursor: pointer; }
+  .expense-item.future { opacity: 0.55; }
+  .exp-note { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .preview-select { flex: 1; background: var(--bg3); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; padding: 7px 8px; outline: none; -webkit-appearance: none; }
+  .preview-del { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 0 4px; }
+  .sub-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .sub-card.paused { opacity: 0.45; }
+  .sub-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(124,58,237,0.16); flex-shrink: 0; }
+  .sub-name { font-size: 15px; font-weight: 600; }
+  .sub-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .sub-amount { margin-left: auto; text-align: right; font-size: 15px; font-weight: 700; white-space: nowrap; }
+  .sub-amount small { display: block; font-size: 11px; font-weight: 500; color: var(--text3); margin-top: 2px; }
+  .subs-hero { margin: 0 0 14px; border-radius: 22px; padding: 20px; background: linear-gradient(135deg, #2a1a4a 0%, #1a0d3c 60%, #120a28 100%); border: 0.5px solid rgba(160,100,255,0.2); position: relative; overflow: hidden; }
+  .subs-hero::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(124,58,237,0.35) 0%, transparent 70%); pointer-events: none; }
+  .check-row { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; background: var(--bg3); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px; }
+  .check-row input { margin-top: 3px; width: 18px; height: 18px; accent-color: #30d158; flex-shrink: 0; }
   .top-action svg { width: 18px; height: 18px; }
 </style>
 </head>
@@ -226,8 +247,17 @@
           </div>
           <div class="form-group">
             <label class="form-label">Категория</label>
-            <input class="form-input" id="add-cat" type="text" placeholder="продукты, такси...">
+            <input class="form-input" id="add-cat" type="text" placeholder="начни вводить или выбери ниже" autocomplete="off" oninput="filterChips(this.value)">
             <div class="chips" id="cat-chips" style="margin-top:8px;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Дата</label>
+            <div class="chips" style="margin-bottom:8px;">
+              <div class="chip" id="date-today" onclick="setAddDate(0)">Сегодня</div>
+              <div class="chip" id="date-yday" onclick="setAddDate(-1)">Вчера</div>
+              <div class="chip" onclick="setAddDate(-2)">Позавчера</div>
+            </div>
+            <input class="form-input" id="add-date" type="date">
           </div>
           <div class="form-group">
             <label class="form-label">Комментарий (необязательно)</label>
@@ -284,6 +314,14 @@
       </div>
     </div>
 
+    <!-- SUBSCRIPTIONS -->
+    <div class="screen" id="s-subs">
+      <div class="header"><h1>Подписки</h1><p id="subs-sub">Регулярные списания</p></div>
+      <div class="pad" style="padding-top:16px;" id="subs-content">
+        <div class="loader"><div class="spin"></div>Загрузка...</div>
+      </div>
+    </div>
+
     <!-- SAVINGS -->
     <div class="screen" id="s-savings">
       <div class="header"><h1>Накопления</h1></div>
@@ -309,6 +347,10 @@
     <button class="nav-btn" id="nav-budget" onclick="go('budget')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       Бюджет
+    </button>
+    <button class="nav-btn" id="nav-subs" onclick="go('subs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/></svg>
+      Подписки
     </button>
     <button class="nav-btn" id="nav-limits" onclick="go('limits')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -358,6 +400,7 @@
       <label class="form-label">План трат по категориям</label>
       <textarea class="form-input" id="budget-plan" rows="6" placeholder="продукты 15000&#10;такси 5000&#10;рестораны 10000&#10;аптеки 3000" style="resize:none;font-family:inherit;line-height:1.6"></textarea>
       <div class="form-hint">Каждая категория с новой строки: название сумма</div>
+      <div id="budget-suggest" style="margin-top:10px;"></div>
     </div>
     <div id="budget-remainder-block" style="display:none;margin-bottom:14px;">
       <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;border:0.5px solid var(--border);">
@@ -376,6 +419,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<datalist id="cat-list"></datalist>
 
 <!-- MODAL: СПИСОК ПОКУПОК -->
 <div class="modal-overlay" id="modal-shopping" onclick="if(event.target===this)closeModal('shopping')" style="align-items:flex-end;">
@@ -439,6 +483,12 @@ const CAT_CONFIG = {
 const catEmoji = c => CAT_CONFIG[c?.toLowerCase()]?.icon || '💳';
 const catColor = c => CAT_CONFIG[c?.toLowerCase()]?.color || '#636366';
 const barColor = pct => pct >= 100 ? '#ff453a' : pct >= 85 ? '#ffd60a' : '#30d158';
+const escHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad2 = n => (n < 10 ? '0' : '') + n;
+const dayKey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+const shortDate = d => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+const isFuture = e => new Date(e.date) > new Date();
+let allCategories = [];
 
 function toast(msg, type='success') {
   const el = document.getElementById('toast');
@@ -454,7 +504,7 @@ function go(name) {
   document.getElementById('s-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
   currentScreen = name;
-  ({ home: loadHome, stats: loadStats, budget: loadBudget, limits: loadLimits, savings: loadSavings, add: loadAdd })[name]?.();
+  ({ home: loadHome, stats: loadStats, budget: loadBudget, limits: loadLimits, savings: loadSavings, add: loadAdd, subs: loadSubs })[name]?.();
 }
 
 function switchTab(tab) {
@@ -503,8 +553,24 @@ function periodLabel() {
   }
 }
 
+// Границы периода (начало включительно, конец — следующая выплата, не включительно)
+function periodBoundsFor(ref) {
+  const y = ref.getFullYear(), m = ref.getMonth(), d = ref.getDate();
+  const salary = getPayday(y, m, 12), advance = getPayday(y, m, 27);
+  let start, end;
+  if (d >= advance.getDate()) { start = advance; end = getPayday(y, m + 1, 12); }
+  else if (d >= salary.getDate()) { start = salary; end = advance; }
+  else { start = getPayday(y, m - 1, 27); end = salary; }
+  start = new Date(start); end = new Date(end);
+  start.setHours(0, 0, 0, 0); end.setHours(0, 0, 0, 0);
+  return { start: start, end: end };
+}
+const periodBounds = () => periodBoundsFor(new Date());
+function prevPeriodBounds() { const cur = periodBounds(); return periodBoundsFor(new Date(cur.start.getTime() - 12 * 3600 * 1000)); }
+
 async function undoLastExpense() {
-  const { data } = await sb.from('expenses').select('*').order('date', { ascending: false }).limit(1);
+  // последняя ВНЕСЁННАЯ вручную трата (подписки и будущие даты не трогаем)
+  const { data } = await sb.from('expenses').select('*').is('subscription_id', null).lte('date', new Date().toISOString()).order('created_at', { ascending: false }).order('date', { ascending: false }).limit(1);
   if (!data || !data.length) { toast('Нечего отменять', 'error'); return; }
   const last = data[0];
   const date = new Date(last.date).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
@@ -546,6 +612,7 @@ function daysLeft() {
 
 async function loadHome() {
   document.getElementById('home-month').textContent = periodLabel();
+  await syncSubscriptions();
   const [{ data: expenses }, { data: budget }] = await Promise.all([
     sb.from('expenses').select('*').gte('date', periodStart()),
     sb.from('budget').select('*')
@@ -559,13 +626,23 @@ async function loadHome() {
   const totalPlan = budgetIsCurrentPeriod ? (budgetItems.reduce((s,b) => s + b.value, 0) + savingsBonus) : 0;
   const visibleExpenses = (expenses||[]).filter(e => !e.hidden);
   const totalSpent = visibleExpenses.reduce((s,e) => s + e.amount, 0);
-  const recent = [...visibleExpenses].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const upcoming = visibleExpenses.filter(isFuture).sort((a,b) => a.date.localeCompare(b.date));
+  const upcomingSum = upcoming.reduce((s,e) => s + e.amount, 0);
+  const recent = visibleExpenses.filter(e => !isFuture(e)).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 10);
   const factByCat = {};
   visibleExpenses.forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
   const remaining = totalPlan > 0 ? totalPlan - totalSpent : 0;
-
-  const heroColor = remaining < 0 ? '#c0392b' : '#fff';
   const unplanned = Object.entries(factByCat).filter(([cat]) => !budgetItems.find(b => b.key === cat));
+  const unplannedSum = unplanned.reduce((s, [, v]) => s + v, 0);
+
+  const expRow = e =>
+    '<div class="expense-item tap' + (isFuture(e) ? ' future' : '') + '" onclick="openExpense(\'' + e.id + '\')">' +
+      '<div class="exp-icon" style="background:' + catColor(e.category) + '18;">' + catEmoji(e.category) + '</div>' +
+      '<div><div class="exp-name">' + escHtml(e.category) + '</div>' +
+        '<div class="exp-cat">' + (isFuture(e) ? 'спишется ' : '') + shortDate(e.date) + (e.subscription_id ? ' · 🔁 подписка' : '') + '</div>' +
+        (e.note ? '<div class="exp-note">' + escHtml(e.note) + '</div>' : '') + '</div>' +
+      '<div class="exp-amount">-' + money(e.amount) + '</div>' +
+    '</div>';
 
   document.getElementById('home-content').innerHTML =
     '<div class="hero-card">' +
@@ -576,6 +653,7 @@ async function loadHome() {
         '<div class="hero-pill"><div class="hero-pill-label">Потрачено</div><div class="hero-pill-val" style="color:#ff8a80">' + money(totalSpent) + '</div></div>' +
         '<div class="hero-pill"><div class="hero-pill-label">Дней осталось</div><div class="hero-pill-val">' + daysLeft() + '</div></div>' +
       '</div>' +
+      (upcomingSum > 0 ? '<div class="hero-sub" style="margin-top:10px;">🔁 в т.ч. подписки, которые ещё спишутся: ' + money(upcomingSum) + '</div>' : '') +
     '</div>' +
 
     (budgetItems.length && budgetIsCurrentPeriod ?
@@ -587,46 +665,144 @@ async function loadHome() {
         return '<div class="budget-bar-item">' +
           '<div class="budget-bar-fill' + (isOver ? ' striped' : '') + '" style="width:' + pct + '%;background:' + col + '"></div>' +
           '<div class="budget-bar-content">' +
-            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(b.key) + '</span><span class="budget-bar-name">' + b.key + (isOver ? ' ⚠️' : '') + '</span></div>' +
+            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(b.key) + '</span><span class="budget-bar-name">' + escHtml(b.key) + (isOver ? ' ⚠️' : '') + '</span></div>' +
             '<div><div class="budget-bar-spent">' + money(spent) + '</div><div class="budget-bar-plan">из ' + money(b.value) + '</div></div>' +
           '</div></div>';
       }).join('') : '') +
 
     (unplanned.length ?
-      '<div class="section-title">Внеплановые</div>' +
+      '<div class="section-title">Внеплановые · ' + money(unplannedSum) + (totalPlan ? ' — не заложены в план' : '') + '</div>' +
       unplanned.sort((a,b) => b[1]-a[1]).map(([cat, amt]) => {
         const maxU = Math.max(...unplanned.map(([,v]) => v));
         const pct = Math.round(amt / maxU * 100);
         return '<div class="budget-bar-item">' +
           '<div class="budget-bar-fill" style="width:' + pct + '%;background:' + catColor(cat) + ';opacity:0.7"></div>' +
           '<div class="budget-bar-content">' +
-            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(cat) + '</span><span class="budget-bar-name">' + cat + '</span></div>' +
+            '<div class="budget-bar-left"><span class="budget-bar-icon">' + catEmoji(cat) + '</span><span class="budget-bar-name">' + escHtml(cat) + '</span></div>' +
             '<div class="budget-bar-spent">' + money(amt) + '</div>' +
           '</div></div>';
       }).join('') : '') +
 
-    '<div class="section-title">Последние расходы</div>' +
+    (upcoming.length ?
+      '<div class="section-title">Скоро спишется</div>' +
+      '<div style="margin:0 16px 4px;"><div class="card">' + upcoming.map(expRow).join('') + '</div></div>' : '') +
+
+    '<div class="section-title">Последние расходы · нажми, чтобы изменить</div>' +
     '<div style="margin:0 16px 16px;"><div class="card">' +
-    (recent.length ? recent.map(e =>
-      '<div class="expense-item">' +
-        '<div class="exp-icon" style="background:' + catColor(e.category) + '18;">' + catEmoji(e.category) + '</div>' +
-        '<div><div class="exp-name">' + e.category + '</div><div class="exp-cat">' + new Date(e.date).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}) + '</div></div>' +
-        '<div class="exp-amount">-' + money(e.amount) + '</div>' +
-      '</div>'
-    ).join('') : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Расходов пока нет</div></div>') +
+    (recent.length ? recent.map(expRow).join('') :
+      '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Расходов пока нет</div></div>') +
     '</div></div>';
 }
 
+// ===== ПРАВКА ЛЮБОЙ ТРАТЫ =====
+async function openExpense(id) {
+  const { data: e } = await sb.from('expenses').select('*').eq('id', id).single();
+  if (!e) { toast('Трата не найдена', 'error'); return; }
+  const isSub = !!e.subscription_id;
+  document.getElementById('modal-savings-title').textContent = isSub ? '🔁 Списание подписки' : 'Изменить трату';
+  document.getElementById('modal-savings-body').innerHTML =
+    '<div class="form-group"><label class="form-label">Сумма (₽)</label><input class="form-input" id="ed-amount" type="number" inputmode="decimal" value="' + e.amount + '"></div>' +
+    '<div class="form-group"><label class="form-label">Категория</label><input class="form-input" id="ed-cat" list="cat-list" autocomplete="off" value="' + escHtml(e.category) + '"></div>' +
+    '<div class="form-group"><label class="form-label">Дата</label><input class="form-input" id="ed-date" type="date" value="' + dayKey(new Date(e.date)) + '"></div>' +
+    '<div class="form-group"><label class="form-label">Комментарий</label><input class="form-input" id="ed-note" value="' + escHtml(e.note || '') + '"></div>' +
+    '<button class="btn btn-primary" id="ed-save" onclick="saveEditedExpense(\'' + e.id + '\',\'' + e.date + '\')">Сохранить</button>' +
+    (isSub
+      ? '<button class="btn btn-secondary" style="color:var(--red)" onclick="skipSubCharge(\'' + e.id + '\')">Пропустить это списание</button>'
+      : '<button class="btn btn-secondary" style="color:var(--red)" onclick="deleteExpense(\'' + e.id + '\')">Удалить трату</button>');
+  openModal('savings');
+}
+
+async function saveEditedExpense(id, oldDate) {
+  const btn = document.getElementById('ed-save'); if (btn.disabled) return; btn.disabled = true; btn.style.opacity = '0.5';
+  const amount = parseFloat(document.getElementById('ed-amount').value);
+  const category = document.getElementById('ed-cat').value.trim().toLowerCase();
+  const day = document.getElementById('ed-date').value;
+  const note = document.getElementById('ed-note').value.trim() || null;
+  if (!amount || !category || !day) { toast('Заполни сумму, категорию и дату', 'error'); btn.disabled = false; btn.style.opacity = '1'; return; }
+  // если день не меняли — сохраняем исходное время
+  const date = dayKey(new Date(oldDate)) === day ? oldDate : new Date(day + 'T12:00:00').toISOString();
+  const { error } = await sb.from('expenses').update({ amount: amount, category: category, date: date, note: note }).eq('id', id);
+  if (error) { toast('Ошибка сохранения', 'error'); btn.disabled = false; btn.style.opacity = '1'; return; }
+  await sb.from('categories').upsert({ name: category }, { onConflict: 'name' });
+  closeModal('savings'); toast('Изменено ✓'); loadHome();
+}
+
+async function deleteExpense(id) {
+  if (!confirm('Удалить трату безвозвратно?')) return;
+  await sb.from('expenses').delete().eq('id', id);
+  closeModal('savings'); toast('Трата удалена ✓'); loadHome();
+}
+
+// подписочные траты не удаляем, а скрываем — иначе синхронизация создаст их заново
+async function skipSubCharge(id) {
+  await sb.from('expenses').update({ hidden: true }).eq('id', id);
+  closeModal('savings'); toast('Списание пропущено ✓'); loadHome();
+}
+
+// ===== ДОБАВЛЕНИЕ ТРАТЫ =====
+// Все категории (без лимита 20), сначала те, что в бюджете, потом по частоте за 90 дней
+let chipsExpanded = false;
+async function loadCategories() {
+  const since = new Date(); since.setDate(since.getDate() - 90);
+  const [{ data: cats }, { data: recentExp }, { data: budget }] = await Promise.all([
+    sb.from('categories').select('name'),
+    sb.from('expenses').select('category').gte('date', since.toISOString()),
+    sb.from('budget').select('key')
+  ]);
+  const freq = {};
+  (recentExp||[]).forEach(e => { const k = (e.category||'').trim(); freq[k] = (freq[k]||0) + 1; });
+  const inBudget = new Set((budget||[]).map(b => b.key).filter(k => !k.startsWith('__')));
+  const names = [...new Set([...(cats||[]).map(c => c.name.trim().toLowerCase()), ...inBudget])].filter(Boolean);
+  names.sort((a, b) => (inBudget.has(b) - inBudget.has(a)) || ((freq[b]||0) - (freq[a]||0)) || a.localeCompare(b, 'ru'));
+  allCategories = names;
+  document.getElementById('cat-list').innerHTML = names.map(n => '<option value="' + escHtml(n) + '">').join('');
+  return names;
+}
+
 async function loadAdd() {
-  const { data: cats } = await sb.from('categories').select('name').limit(20);
-  document.getElementById('cat-chips').innerHTML = (cats||[]).map(c =>
-    `<div class="chip" onclick="selectCat('${c.name}')">${catEmoji(c.name)} ${c.name}</div>`
-  ).join('');
+  if (!document.getElementById('add-date').value) setAddDate(0);
+  await loadCategories();
+  filterChips(document.getElementById('add-cat').value);
+}
+
+function filterChips(q) {
+  q = (q || '').trim().toLowerCase();
+  let list = q ? allCategories.filter(c => c.includes(q)) : allCategories;
+  const LIMIT = 12;
+  const hidden = !q && !chipsExpanded && list.length > LIMIT ? list.length - LIMIT : 0;
+  if (hidden) list = list.slice(0, LIMIT);
+  const sel = document.getElementById('add-cat').value.trim().toLowerCase();
+  document.getElementById('cat-chips').innerHTML =
+    list.map(c => '<div class="chip' + (c === sel ? ' selected' : '') + '" data-cat="' + escHtml(c) + '" onclick="selectCat(this.dataset.cat)">' + catEmoji(c) + ' ' + escHtml(c) + '</div>').join('') +
+    (hidden ? '<div class="chip more" onclick="chipsExpanded=true;filterChips(\'\')">Ещё ' + hidden + ' ›</div>' : '') +
+    (q && !allCategories.includes(q) ? '<div class="chip suggest">+ новая «' + escHtml(q) + '»</div>' : '');
 }
 
 function selectCat(name) {
   document.getElementById('add-cat').value = name;
-  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('selected', c.textContent.includes(name)));
+  document.querySelectorAll('#cat-chips .chip').forEach(c => c.classList.toggle('selected', c.dataset.cat === name));
+}
+
+function setAddDate(offset) {
+  const d = new Date(); d.setDate(d.getDate() + offset);
+  document.getElementById('add-date').value = dayKey(d);
+}
+
+// расстояние Левенштейна — ловим опечатки вроде «прдукты» / «такcи»
+function lev(a, b) {
+  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function similarCats(cat, list) {
+  return list.map(c => ({ c: c, d: (c.includes(cat) || cat.includes(c)) ? 0 : lev(c, cat) }))
+    .filter(x => x.d <= Math.max(2, Math.floor(cat.length / 4)) || x.c.slice(0, 4) === cat.slice(0, 4))
+    .sort((a, b) => a.d - b.d).slice(0, 5).map(x => x.c);
 }
 
 let pendingExpense = null;
@@ -634,34 +810,52 @@ let pendingExpense = null;
 async function saveExpense() {
   const amount = parseFloat(document.getElementById('add-amount').value);
   const category = document.getElementById('add-cat').value.trim().toLowerCase();
+  const note = document.getElementById('add-note').value.trim() || null;
+  const day = document.getElementById('add-date').value || dayKey(new Date());
   if (!amount || !category) { toast('Заполни сумму и категорию', 'error'); return; }
-  const { data: cats } = await sb.from('categories').select('name');
-  const existing = (cats||[]).map(c => c.name.toLowerCase());
+  const date = day === dayKey(new Date()) ? new Date().toISOString() : new Date(day + 'T12:00:00').toISOString();
+  const existing = allCategories.length ? allCategories : await loadCategories();
   const isNew = !existing.includes(category);
   if (isNew && existing.length > 0) {
-    pendingExpense = { amount, category };
-    const similar = existing.filter(c => c.includes(category.slice(0,3)) || category.includes(c.slice(0,3))).slice(0, 5);
-    const similarHtml = similar.length ? `<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Похожие:<br>${similar.map(c => `<span onclick="useSimilarCat('${c}')" style="display:inline-block;margin:4px 4px 0 0;padding:5px 10px;background:var(--bg3);border-radius:20px;cursor:pointer;font-size:13px">${c}</span>`).join('')}</div>` : '';
+    pendingExpense = { amount: amount, category: category, note: note, date: date };
+    const similar = similarCats(category, existing);
+    const similarHtml = similar.length
+      ? '<div style="margin-bottom:12px;font-size:13px;color:var(--text2)">Может, ты имел в виду:<br>' +
+        similar.map(c => '<span data-cat="' + escHtml(c) + '" onclick="useSimilarCat(this.dataset.cat)" style="display:inline-block;margin:6px 6px 0 0;padding:7px 12px;background:var(--bg3);border-radius:20px;cursor:pointer;font-size:14px;color:var(--text)">' + catEmoji(c) + ' ' + escHtml(c) + '</span>').join('') + '</div>'
+      : '';
     document.getElementById('modal-savings-title').textContent = 'Новая категория';
-    document.getElementById('modal-savings-body').innerHTML = `<div style="margin-bottom:12px;font-size:14px;">Категория <b>${category}</b> не существует.</div>${similarHtml}<button class="btn btn-primary" onclick="confirmNewCategory()" style="margin-bottom:8px">Да, создать «${category}»</button><button class="btn btn-secondary" onclick="closeModal('savings');pendingExpense=null;">Отмена</button>`;
+    document.getElementById('modal-savings-body').innerHTML =
+      '<div style="margin-bottom:12px;font-size:14px;">Категории <b>' + escHtml(category) + '</b> ещё нет. Новые категории часто не попадают в план бюджета — проверь, нет ли подходящей.</div>' +
+      similarHtml +
+      '<button class="btn btn-primary" onclick="confirmNewCategory()" style="margin-bottom:8px">Да, создать «' + escHtml(category) + '»</button>' +
+      '<button class="btn btn-secondary" onclick="closeModal(\'savings\');pendingExpense=null;">Отмена</button>';
     openModal('savings'); return;
   }
-  await doSaveExpense(amount, category);
+  await doSaveExpense(amount, category, note, date);
 }
 
-function useSimilarCat(cat) { closeModal('savings'); pendingExpense = null; document.getElementById('add-cat').value = cat; selectCat(cat); }
-async function confirmNewCategory() { closeModal('savings'); if (!pendingExpense) return; await doSaveExpense(pendingExpense.amount, pendingExpense.category); pendingExpense = null; }
+async function useSimilarCat(cat) {
+  closeModal('savings');
+  const p = pendingExpense; pendingExpense = null;
+  selectCat(cat);
+  if (p) await doSaveExpense(p.amount, cat, p.note, p.date);
+}
+async function confirmNewCategory() { closeModal('savings'); if (!pendingExpense) return; const p = pendingExpense; pendingExpense = null; await doSaveExpense(p.amount, p.category, p.note, p.date); }
 
-async function doSaveExpense(amount, category) {
+async function doSaveExpense(amount, category, note, date) {
   const btn = document.getElementById('save-expense-btn');
+  if (btn && btn.disabled) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Сохранение...'; btn.style.opacity = '0.5'; }
-  const { error } = await sb.from('expenses').insert({ amount, category, date: new Date().toISOString() });
+  const { error } = await sb.from('expenses').insert({ amount: amount, category: category, note: note || null, date: date || new Date().toISOString() });
   if (error) { toast('Ошибка сохранения', 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; btn.style.opacity = '1'; } return; }
   await sb.from('categories').upsert({ name: category }, { onConflict: 'name' });
+  if (!allCategories.includes(category)) allCategories.push(category);
   await checkLimit(category);
   document.getElementById('add-amount').value = '';
   document.getElementById('add-cat').value = '';
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('add-note').value = '';
+  setAddDate(0);
+  filterChips('');
   if (btn) { btn.disabled = false; btn.textContent = 'Сохранить'; btn.style.opacity = '1'; }
   toast('Сохранено ✓');
   go('home');
@@ -677,11 +871,6 @@ async function checkLimit(category) {
 
 let photoExpenses = [];
 
-// ============================================================
-// ЗАМЕНИ функцию handlePhoto (строки ~680-710) на эту версию.
-// Она устойчива к любому формату ответа и показывает, что именно
-// вернул воркер, если распознать не удалось.
-// ============================================================
 async function handlePhoto(input) {
   if (!input.files[0]) return;
   document.getElementById('photo-result').style.display = 'none';
@@ -694,16 +883,10 @@ async function handlePhoto(input) {
     document.getElementById('screenshot-img').src = e.target.result;
     document.getElementById('photo-preview-img').style.display = 'block';
     try {
-      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64, mediaType: file.type })
-      });
+      const res = await fetch('https://finance-ocr.lisov199974.workers.dev/', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ image: base64, mediaType: file.type }) });
       const raw = await res.text();
-      console.log('OCR ответ воркера:', raw);          // смотри это в консоли (F12)
+      console.log('OCR ответ воркера:', raw);
       const parsed = parseExpenses(raw);
-
-      // Ничего не распознали — показываем сырой ответ, чтобы понять причину
       if (!parsed.length) {
         document.getElementById('photo-loading').style.display = 'none';
         document.getElementById('upload-area').style.display = 'block';
@@ -711,51 +894,36 @@ async function handlePhoto(input) {
         toast('Не распознано. Воркер вернул: ' + raw.slice(0, 120), 'error');
         return;
       }
-
       const { data: merchants } = await sb.from('merchant_map').select('*');
-      const mMap = {};
-      (merchants || []).forEach(m => mMap[m.merchant.toLowerCase()] = m.category);
-
+      const mMap = {}; (merchants||[]).forEach(m => mMap[m.merchant.trim().toLowerCase()] = m.category.trim().toLowerCase());
       photoExpenses = parsed.map(e => {
-        const cat = String(e.category || e.name || e.merchant || 'прочее');
-        return {
-          amount: parseFloat(e.amount) || 0,
-          original: cat,
-          category: mMap[cat.toLowerCase()] || cat
-        };
+        const orig = String(e.category || e.name || e.merchant || 'прочее').trim();
+        return { amount: parseFloat(e.amount) || 0, original: orig, category: mMap[orig.toLowerCase()] || orig.toLowerCase() };
       }).filter(e => e.amount > 0);
-
       if (!photoExpenses.length) {
         document.getElementById('photo-loading').style.display = 'none';
         document.getElementById('upload-area').style.display = 'block';
+        document.getElementById('photo-preview-img').style.display = 'none';
         toast('Суммы не найдены в ответе', 'error');
         return;
       }
-
-      document.getElementById('preview-items').innerHTML = photoExpenses.map((e, i) =>
-        '<div class="preview-item">' +
-          '<input value="' + e.category + '" onchange="photoExpenses[' + i + '].category=this.value" style="flex:1;text-align:left">' +
-          '<input value="' + Math.round(e.amount) + '" onchange="photoExpenses[' + i + '].amount=parseFloat(this.value)||0" type="number">' +
-        '</div>'
-      ).join('');
+      if (!allCategories.length) await loadCategories();
+      renderPhotoPreview();
       document.getElementById('photo-loading').style.display = 'none';
       document.getElementById('photo-result').style.display = 'block';
-    } catch (err) {
-      console.error('OCR ошибка:', err);
+    } catch(err) {
       document.getElementById('photo-loading').style.display = 'none';
       document.getElementById('upload-area').style.display = 'block';
       document.getElementById('photo-preview-img').style.display = 'none';
+      console.error('OCR ошибка:', err);
       toast('Ошибка: ' + err.message, 'error');
     }
   };
   reader.readAsDataURL(file);
 }
 
-// ============================================================
-// ДОБАВЬ эту новую функцию сразу после handlePhoto.
-// Достаёт массив трат из ответа в любом разумном формате:
+// Достаёт массив трат из ответа воркера в любом разумном формате:
 // голый массив, объект {expenses:[...]}, или сырой ответ Anthropic.
-// ============================================================
 function parseExpenses(raw) {
   if (!raw) return [];
   let t = raw.replace(/```json|```/g, '').trim();
@@ -763,7 +931,6 @@ function parseExpenses(raw) {
   try {
     data = JSON.parse(t);
   } catch (_) {
-    // если вокруг JSON есть лишний текст — выдёргиваем массив регуляркой
     const m = t.match(/\[[\s\S]*\]/);
     if (m) { try { data = JSON.parse(m[0]); } catch (_) {} }
   }
@@ -772,7 +939,6 @@ function parseExpenses(raw) {
     if (Array.isArray(data.expenses)) return data.expenses;
     if (Array.isArray(data.transactions)) return data.transactions;
     if (Array.isArray(data.items)) return data.items;
-    // на случай если воркер отдаёт сырой ответ Anthropic {content:[{text:"..."}]}
     if (Array.isArray(data.content) && data.content[0] && data.content[0].text)
       return parseExpenses(data.content[0].text);
     if (data.amount != null) return [data];
@@ -780,20 +946,45 @@ function parseExpenses(raw) {
   return [];
 }
 
+// Каждая строка — выпадающий список существующих категорий. Неизвестные подсвечены жёлтым,
+// чтобы название магазина не превращалось молча в новую категорию.
+function renderPhotoPreview() {
+  const unknown = photoExpenses.filter(e => !allCategories.includes(e.category)).length;
+  document.getElementById('preview-items').innerHTML =
+    (unknown ? '<div style="padding:10px 14px;font-size:12px;color:var(--amber);border-bottom:0.5px solid var(--border)">⚠️ ' + unknown + ' без знакомой категории — выбери из списка</div>' : '') +
+    photoExpenses.map((e, i) => {
+      const known = allCategories.includes(e.category);
+      const opts = (known ? '' : '<option value="' + escHtml(e.category) + '" selected>⚠️ ' + escHtml(e.category) + ' (новая)</option>') +
+        allCategories.map(c => '<option value="' + escHtml(c) + '"' + (c === e.category ? ' selected' : '') + '>' + catEmoji(c) + ' ' + escHtml(c) + '</option>').join('');
+      return '<div class="preview-item" style="flex-direction:column;gap:6px;' + (known ? '' : 'background:rgba(255,214,10,0.07);') + '">' +
+        '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)"><span>' + escHtml(e.original) + '</span>' +
+          '<button class="preview-del" onclick="photoExpenses.splice(' + i + ',1);renderPhotoPreview()">×</button></div>' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+          '<select class="preview-select" onchange="photoExpenses[' + i + '].category=this.value;renderPhotoPreview()">' + opts + '</select>' +
+          '<input value="' + Math.round(e.amount) + '" onchange="photoExpenses[' + i + '].amount=parseFloat(this.value)||0" type="number" inputmode="decimal">' +
+        '</div></div>';
+    }).join('');
+}
+
 async function savePhotoExpenses() {
   if (!photoExpenses.length) return;
   const btn = document.getElementById('save-photo-btn');
   if (btn.disabled) return;
   btn.disabled = true; btn.textContent = 'Сохранение...'; btn.style.opacity = '0.5';
-  const rows = photoExpenses.filter(e => e.amount > 0).map(e => ({ amount: e.amount, category: e.category.toLowerCase(), date: new Date().toISOString() }));
+  const now = new Date().toISOString();
+  const rows = photoExpenses.filter(e => e.amount > 0).map(e => ({
+    amount: e.amount, category: e.category.trim().toLowerCase(), date: now,
+    note: (e.original && e.original.toLowerCase() !== e.category.toLowerCase()) ? e.original : null
+  }));
   const { error } = await sb.from('expenses').insert(rows);
   if (error) { toast('Ошибка сохранения', 'error'); btn.disabled = false; btn.textContent = 'Сохранить все'; btn.style.opacity = '1'; return; }
   for (const e of photoExpenses) {
-    await sb.from('categories').upsert({ name: e.category.toLowerCase() }, { onConflict: 'name' });
-    if (e.original && e.original.toLowerCase() !== e.category.toLowerCase()) await sb.from('merchant_map').upsert({ merchant: e.original.toLowerCase(), category: e.category.toLowerCase() }, { onConflict: 'merchant' });
+    await sb.from('categories').upsert({ name: e.category.trim().toLowerCase() }, { onConflict: 'name' });
+    if (e.original && e.original.toLowerCase() !== e.category.toLowerCase()) await sb.from('merchant_map').upsert({ merchant: e.original.trim().toLowerCase(), category: e.category.trim().toLowerCase() }, { onConflict: 'merchant' });
   }
+  allCategories = [];
   cancelPhoto();
-  toast(`Сохранено ${rows.length} трат ✓`);
+  toast('Сохранено ' + rows.length + ' трат ✓');
   go('home');
 }
 
@@ -815,7 +1006,7 @@ async function loadStats() {
     sb.from('prev_expenses').select('*')
   ]);
   const byCat = {}, prevByCat = {};
-  (curr||[]).forEach(e => { byCat[e.category] = (byCat[e.category]||0) + e.amount; });
+  (curr||[]).filter(e => !e.hidden).forEach(e => { byCat[e.category] = (byCat[e.category]||0) + e.amount; });
   (prev||[]).forEach(e => { prevByCat[e.category] = (prevByCat[e.category]||0) + e.amount; });
   const total = Object.values(byCat).reduce((s,v) => s+v, 0);
   const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
@@ -841,6 +1032,7 @@ async function loadStats() {
 
 async function loadBudget() {
   document.getElementById('budget-period').textContent = periodLabel();
+  await syncSubscriptions();
   const [{ data: budget }, { data: expenses }] = await Promise.all([
     sb.from('budget').select('*'),
     sb.from('expenses').select('*').gte('date', periodStart())
@@ -848,7 +1040,7 @@ async function loadBudget() {
   const income = (budget||[]).find(b => b.key === '__income__')?.value || 0;
   const items = (budget||[]).filter(b => b.key !== '__income__' && b.key !== '__period__' && b.key !== '__from_savings__');
   const factByCat = {};
-  (expenses||[]).forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
+  (expenses||[]).filter(e => !e.hidden).forEach(e => { factByCat[e.category] = (factByCat[e.category]||0) + e.amount; });
   const totalSpent = Object.values(factByCat).reduce((s,v)=>s+v,0);
   document.getElementById('budget-content').innerHTML = `
     ${items.length ? `
@@ -864,18 +1056,49 @@ async function loadBudget() {
 
 async function openBudgetModal(income, items) {
   document.getElementById('budget-income').value = income || '';
-  document.getElementById('budget-plan').value = items.map(b => `${b.key} ${Math.round(b.value)}`).join('\n');
   document.getElementById('budget-remainder-block').style.display = 'none';
   document.getElementById('budget-savings-block').style.display = 'none';
-  const { data: accounts } = await sb.from('accounts').select('name');
+  const prev = prevPeriodBounds();
+  const cur = periodBounds();
+  await syncSubscriptions();
+  const [{ data: accounts }, { data: prevExp }, { data: subExp }] = await Promise.all([
+    sb.from('accounts').select('name'),
+    sb.from('expenses').select('category,amount,hidden').gte('date', prev.start.toISOString()).lt('date', prev.end.toISOString()),
+    sb.from('expenses').select('category,amount,hidden').not('subscription_id', 'is', null).gte('date', cur.start.toISOString()).lt('date', cur.end.toISOString())
+  ]);
+  // Подписки текущего периода — сразу в план (если категории ещё нет в плане)
+  const subByCat = {};
+  (subExp||[]).filter(e => !e.hidden).forEach(e => { subByCat[e.category] = (subByCat[e.category]||0) + e.amount; });
+  const lines = items.map(b => b.key + ' ' + Math.round(b.value));
+  const planned = new Set(items.map(b => b.key));
+  const addedSubs = [];
+  Object.entries(subByCat).forEach(([cat, sum]) => { if (!planned.has(cat)) { lines.push(cat + ' ' + Math.round(sum)); planned.add(cat); addedSubs.push(cat); } });
+  document.getElementById('budget-plan').value = lines.join('\n');
+
+  const prevByCat = {};
+  (prevExp||[]).filter(e => !e.hidden).forEach(e => { prevByCat[e.category] = (prevByCat[e.category]||0) + e.amount; });
+
   const sel = document.getElementById('budget-savings-account');
-  sel.innerHTML = '<option value="">— Не зачислять —</option>' + (accounts||[]).map(a => `<option value="${a.name}">${a.name}</option>`).join('');
+  sel.innerHTML = '<option value="">— Не зачислять —</option>' + (accounts||[]).map(a => '<option value="' + escHtml(a.name) + '">' + escHtml(a.name) + '</option>').join('');
   openModal('budget');
+
+  const planCats = () => new Set(document.getElementById('budget-plan').value.trim().split('\n').map(l => l.trim().split(/\s+/).slice(0, -1).join(' ').toLowerCase()).filter(Boolean));
+  const renderSuggest = () => {
+    const inPlan = planCats();
+    const missing = Object.entries(prevByCat).filter(([c]) => !inPlan.has(c)).sort((a, b) => b[1] - a[1]);
+    document.getElementById('budget-suggest').innerHTML =
+      (addedSubs.length ? '<div class="form-hint" style="color:var(--accent);margin-bottom:6px">🔁 Подписки периода добавлены в план автоматически</div>' : '') +
+      (missing.length ? '<div class="form-hint" style="margin-bottom:6px">В прошлом периоде были траты вне плана — нажми, чтобы добавить:</div><div class="chips" style="margin-bottom:0">' +
+        missing.map(([c, v]) => '<div class="chip suggest" data-line="' + escHtml(c + ' ' + Math.round(v / 100) * 100) + '" onclick="addPlanLine(this.dataset.line)">+ ' + catEmoji(c) + ' ' + escHtml(c) + ' ~' + money(v) + '</div>').join('') + '</div>' : '');
+  };
+  window._renderBudgetSuggest = renderSuggest;
+  renderSuggest();
+
   const updateRemainder = () => {
     const inc = parseFloat(document.getElementById('budget-income').value) || 0;
-    const lines = document.getElementById('budget-plan').value.trim().split('\n');
+    const ls = document.getElementById('budget-plan').value.trim().split('\n');
     let total = 0;
-    for (const line of lines) { const parts = line.trim().split(/\s+/); if (parts.length < 2) continue; const amt = parseFloat(parts[parts.length-1]); if (amt > 0) total += amt; }
+    for (const line of ls) { const parts = line.trim().split(/\s+/); if (parts.length < 2) continue; const amt = parseFloat(parts[parts.length-1]); if (amt > 0) total += amt; }
     const rem = inc - total;
     if (inc > 0) {
       document.getElementById('budget-remainder-val').textContent = money(rem);
@@ -885,8 +1108,14 @@ async function openBudgetModal(income, items) {
     }
   };
   document.getElementById('budget-income').oninput = updateRemainder;
-  document.getElementById('budget-plan').oninput = updateRemainder;
+  document.getElementById('budget-plan').oninput = () => { updateRemainder(); renderSuggest(); };
   if (income) updateRemainder();
+}
+
+function addPlanLine(line) {
+  const ta = document.getElementById('budget-plan');
+  ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + line;
+  ta.dispatchEvent(new Event('input'));
 }
 
 async function saveBudget() {
@@ -1027,7 +1256,7 @@ async function loadHistoryMonth() {
   const from = new Date(historyYear, historyMonth, 1).toISOString();
   const to = new Date(historyYear, historyMonth + 1, 0, 23, 59, 59).toISOString();
   const { data: expenses } = await sb.from('expenses').select('*').gte('date', from).lte('date', to);
-  const items = expenses || [];
+  const items = (expenses || []).filter(e => !e.hidden);
   if (!items.length) { document.getElementById('history-content').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных за этот месяц</div></div>'; return; }
   const byCat = {};
   items.forEach(e => { byCat[e.category] = (byCat[e.category]||0) + e.amount; });
@@ -1039,6 +1268,194 @@ async function loadHistoryMonth() {
     '<div class="card">' +
     sorted.map(([cat, amt]) => { const pct = Math.round(amt/maxAmt*100); return '<div class="bar-row"><div class="bar-header"><span class="bar-cat">' + catEmoji(cat) + ' ' + cat + '</span><span class="bar-nums">' + money(amt) + ' · ' + Math.round(amt/total*100) + '%</span></div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + catColor(cat) + '"></div></div></div>'; }).join('') +
     '</div>';
+}
+
+// ===== ПОДПИСКИ =====
+// Как работает: при каждом открытии приложения для каждой активной подписки считаются даты
+// списаний внутри текущего периода, и для каждой даты в expenses создаётся трата
+// (charge_key = id_подписки + дата — уникальный, поэтому дублей не будет).
+// Будущие списания сразу уменьшают остаток периода и показываются серым в «Скоро спишется».
+const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+function chargeDatesInRange(sub, start, end) {
+  const res = [];
+  for (let i = -1; i < 3; i++) {
+    const first = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    if (sub.period === 'year' && first.getMonth() + 1 !== Number(sub.billing_month)) continue;
+    const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    const charge = new Date(first.getFullYear(), first.getMonth(), Math.min(Number(sub.billing_day), lastDay), 12, 0, 0);
+    if (charge >= start && charge < end) res.push(charge);
+  }
+  return res;
+}
+
+function nextChargeDate(sub) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const far = new Date(today); far.setFullYear(far.getFullYear() + 1); far.setDate(far.getDate() + 1);
+  for (let i = 0; i < 14; i++) {
+    const first = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    if (sub.period === 'year' && first.getMonth() + 1 !== Number(sub.billing_month)) continue;
+    const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    const d = new Date(first.getFullYear(), first.getMonth(), Math.min(Number(sub.billing_day), lastDay), 12);
+    if (d >= today) return d;
+  }
+  return null;
+}
+
+let _subsSync = null;
+async function syncSubscriptions() {
+  if (_subsSync) return _subsSync;
+  _subsSync = (async () => {
+    try {
+      const { data: subs, error } = await sb.from('subscriptions').select('*').eq('active', true);
+      if (error || !subs || !subs.length) return;
+      const { start, end } = periodBounds();
+      const rows = [];
+      subs.forEach(s => chargeDatesInRange(s, start, end).forEach(dt => {
+        if (s.start_date && dayKey(dt) < s.start_date) return;
+        rows.push({ amount: Number(s.amount), category: (s.category || 'подписки').toLowerCase(), date: dt.toISOString(),
+          note: s.name, subscription_id: s.id, charge_key: s.id + '_' + dayKey(dt) });
+      }));
+      if (rows.length) await sb.from('expenses').upsert(rows, { onConflict: 'charge_key', ignoreDuplicates: true });
+    } catch (e) { console.warn('subs sync', e); }
+  })();
+  try { await _subsSync; } finally { _subsSync = null; }
+}
+
+const monthlyEq = s => s.period === 'year' ? Number(s.amount) / 12 : Number(s.amount);
+const subSchedule = s => s.period === 'year' ? 'раз в год, ' + s.billing_day + ' ' + MONTHS_GEN[s.billing_month - 1] : 'каждое ' + s.billing_day + ' число';
+
+async function loadSubs() {
+  await syncSubscriptions();
+  const { start, end } = periodBounds();
+  const [{ data: subs }, { data: charges }] = await Promise.all([
+    sb.from('subscriptions').select('*').order('active', { ascending: false }).order('billing_day'),
+    sb.from('expenses').select('amount,date,hidden,subscription_id').not('subscription_id', 'is', null).gte('date', start.toISOString()).lt('date', end.toISOString())
+  ]);
+  const list = subs || [];
+  const active = list.filter(s => s.active);
+  const perMonth = active.reduce((s, x) => s + monthlyEq(x), 0);
+  const ch = (charges||[]).filter(c => !c.hidden);
+  const paid = ch.filter(c => !isFuture(c)).reduce((s, c) => s + c.amount, 0);
+  const ahead = ch.filter(isFuture).reduce((s, c) => s + c.amount, 0);
+  document.getElementById('subs-sub').textContent = active.length + ' активных · ' + money(perMonth) + ' в месяц';
+  document.getElementById('subs-content').innerHTML =
+    '<div class="subs-hero">' +
+      '<div class="hero-label" style="position:relative">В ЭТОМ ПЕРИОДЕ · ' + periodLabel() + '</div>' +
+      '<div class="hero-amount" style="font-size:32px;position:relative">' + money(paid + ahead) + '</div>' +
+      '<div class="hero-row">' +
+        '<div class="hero-pill"><div class="hero-pill-label">Уже списано</div><div class="hero-pill-val">' + money(paid) + '</div></div>' +
+        '<div class="hero-pill"><div class="hero-pill-label">Ещё спишется</div><div class="hero-pill-val">' + money(ahead) + '</div></div>' +
+      '</div>' +
+      '<div class="hero-sub" style="margin-top:10px">В год: ' + money(perMonth * 12) + ' · уже учтено в остатке бюджета</div>' +
+    '</div>' +
+    (list.length ? list.map(s => {
+      const nx = s.active ? nextChargeDate(s) : null;
+      return '<div class="sub-card' + (s.active ? '' : ' paused') + '" onclick="openSubForm(\'' + s.id + '\')">' +
+        '<div class="sub-icon">' + catEmoji(s.category) + '</div>' +
+        '<div style="min-width:0"><div class="sub-name">' + escHtml(s.name) + '</div>' +
+          '<div class="sub-meta">' + (s.active ? subSchedule(s) + (nx ? ' · след. ' + shortDate(nx) : '') : '⏸ на паузе') + '</div></div>' +
+        '<div class="sub-amount">' + money(s.amount) + '<small>' + (s.period === 'year' ? '≈ ' + money(monthlyEq(s)) + '/мес' : 'в месяц') + '</small></div>' +
+      '</div>';
+    }).join('') : '<div class="empty"><div class="empty-icon">🔁</div><div class="empty-text">Добавь Яндекс Плюс, iCloud, спортзал — они будут сами попадать в каждый период</div></div>') +
+    '<button class="btn btn-primary" onclick="openSubForm()" style="margin-top:8px">+ Добавить подписку</button>';
+}
+
+let _editingSub = null;
+async function openSubForm(id) {
+  let s = { name: '', amount: '', billing_day: new Date().getDate(), period: 'month', billing_month: new Date().getMonth() + 1, category: 'подписки', active: true };
+  if (id) { const { data } = await sb.from('subscriptions').select('*').eq('id', id).single(); if (data) s = data; }
+  _editingSub = id ? s : null;
+  if (!allCategories.length) await loadCategories();
+  document.getElementById('modal-savings-title').textContent = id ? 'Подписка' : 'Новая подписка';
+  document.getElementById('modal-savings-body').innerHTML =
+    '<div class="form-group"><label class="form-label">Название</label><input class="form-input" id="sub-name" placeholder="Яндекс Плюс" value="' + escHtml(s.name) + '"></div>' +
+    '<div class="form-group"><label class="form-label">Сумма (₽)</label><input class="form-input" id="sub-amount" type="number" inputmode="decimal" placeholder="399" value="' + escHtml(s.amount) + '"></div>' +
+    '<div class="tabs" style="margin-bottom:14px">' +
+      '<button class="tab' + (s.period !== 'year' ? ' active' : '') + '" id="sub-p-month" onclick="setSubPeriod(\'month\')">Каждый месяц</button>' +
+      '<button class="tab' + (s.period === 'year' ? ' active' : '') + '" id="sub-p-year" onclick="setSubPeriod(\'year\')">Раз в год</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px">' +
+      '<div class="form-group" style="flex:1"><label class="form-label">Число списания</label><input class="form-input" id="sub-day" type="number" inputmode="numeric" min="1" max="31" value="' + s.billing_day + '" oninput="updateSubPastHint()"></div>' +
+      '<div class="form-group" style="flex:1;display:' + (s.period === 'year' ? 'block' : 'none') + '" id="sub-month-wrap"><label class="form-label">Месяц</label><select class="form-input" id="sub-month" onchange="updateSubPastHint()">' +
+        months.map((mn, i) => '<option value="' + (i + 1) + '"' + (i + 1 == s.billing_month ? ' selected' : '') + '>' + mn + '</option>').join('') + '</select></div>' +
+    '</div>' +
+    '<div class="form-group"><label class="form-label">Категория</label><input class="form-input" id="sub-cat" list="cat-list" autocomplete="off" value="' + escHtml(s.category) + '"><div class="form-hint">Например: подписки, спортивный зал, связь, психолог</div></div>' +
+    '<div id="sub-past"></div>' +
+    '<button class="btn btn-primary" id="sub-save" onclick="saveSub()">Сохранить</button>' +
+    (id ? '<button class="btn btn-secondary" onclick="toggleSubActive()">' + (s.active ? '⏸ Поставить на паузу' : '▶️ Возобновить') + '</button>' +
+          '<button class="btn btn-secondary" style="color:var(--red)" onclick="deleteSub()">Удалить подписку</button>' : '');
+  window._subPeriod = s.period || 'month';
+  updateSubPastHint();
+  openModal('savings');
+}
+
+function setSubPeriod(p) {
+  window._subPeriod = p;
+  document.getElementById('sub-p-month').classList.toggle('active', p === 'month');
+  document.getElementById('sub-p-year').classList.toggle('active', p === 'year');
+  document.getElementById('sub-month-wrap').style.display = p === 'year' ? 'block' : 'none';
+  updateSubPastHint();
+}
+
+function subFromForm() {
+  return {
+    name: document.getElementById('sub-name').value.trim(),
+    amount: parseFloat(document.getElementById('sub-amount').value),
+    billing_day: Math.max(1, Math.min(31, parseInt(document.getElementById('sub-day').value) || 1)),
+    period: window._subPeriod || 'month',
+    billing_month: window._subPeriod === 'year' ? parseInt(document.getElementById('sub-month').value) : null,
+    category: (document.getElementById('sub-cat').value.trim() || 'подписки').toLowerCase()
+  };
+}
+
+// Если в этом периоде дата списания уже прошла — спрашиваем, учитывать ли её
+function updateSubPastHint() {
+  const box = document.getElementById('sub-past'); if (!box) return;
+  if (_editingSub) { box.innerHTML = ''; return; }
+  const s = subFromForm();
+  const { start } = periodBounds();
+  const now = new Date();
+  const past = chargeDatesInRange(s, start, now);
+  box.innerHTML = past.length
+    ? '<label class="check-row"><input type="checkbox" id="sub-count-past" checked><span>Списание ' + shortDate(past[0]) + ' уже было — учесть его в этом периоде<br><span style="font-size:12px;color:var(--text3)">Сними галочку, если уже внёс его вручную</span></span></label>'
+    : '';
+}
+
+async function saveSub() {
+  const btn = document.getElementById('sub-save'); if (btn.disabled) return;
+  const s = subFromForm();
+  if (!s.name || !s.amount) { toast('Заполни название и сумму', 'error'); return; }
+  btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Сохранение...';
+  let error;
+  if (_editingSub) {
+    ({ error } = await sb.from('subscriptions').update(s).eq('id', _editingSub.id));
+    // будущие списания пересоздаём с новыми параметрами
+    if (!error) await sb.from('expenses').delete().eq('subscription_id', _editingSub.id).gt('date', new Date().toISOString());
+  } else {
+    const countPast = document.getElementById('sub-count-past')?.checked;
+    s.start_date = countPast ? dayKey(periodBounds().start) : dayKey(new Date());
+    s.active = true;
+    ({ error } = await sb.from('subscriptions').insert(s));
+  }
+  if (error) { toast('Ошибка: ' + error.message, 'error'); btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Сохранить'; return; }
+  await sb.from('categories').upsert({ name: s.category }, { onConflict: 'name' });
+  closeModal('savings'); toast('Подписка сохранена ✓ — уже учтена в бюджете'); loadSubs();
+}
+
+async function toggleSubActive() {
+  const s = _editingSub; if (!s) return;
+  await sb.from('subscriptions').update({ active: !s.active }).eq('id', s.id);
+  if (s.active) await sb.from('expenses').delete().eq('subscription_id', s.id).gt('date', new Date().toISOString());
+  closeModal('savings'); toast(s.active ? 'На паузе — будущие списания убраны' : 'Возобновлено ✓'); loadSubs();
+}
+
+async function deleteSub() {
+  const s = _editingSub; if (!s) return;
+  if (!confirm('Удалить «' + s.name + '»? Прошлые списания останутся в истории.')) return;
+  await sb.from('expenses').delete().eq('subscription_id', s.id).gt('date', new Date().toISOString());
+  await sb.from('subscriptions').delete().eq('id', s.id);
+  closeModal('savings'); toast('Подписка удалена'); loadSubs();
 }
 
 loadHome();
